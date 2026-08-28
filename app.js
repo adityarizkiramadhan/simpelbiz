@@ -1,9 +1,11 @@
 // ============================================================
-// SIMPELBIZ - APPLICATION (FULL FITUR)
+// SIMPELBIZ - APPLICATION (FULL FITUR DENGAN KENDALA)
 // ============================================================
 
 let allData = [];
+let allPengiriman = [];
 let editingId = null;
+let editingPengirimanId = null;
 let currentPage = 1;
 const itemsPerPage = 10;
 let filteredMonitoringData = [];
@@ -18,6 +20,26 @@ const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
 const berkasModal = document.getElementById("berkasModal");
 const berkasForm = document.getElementById("berkasForm");
+const pengirimanModal = document.getElementById("pengirimanModal");
+const pengirimanForm = document.getElementById("pengirimanForm");
+
+// ============================================================
+// FUNGSI DETEKSI KENDALA
+// ============================================================
+
+function isDataTerkendala(item) {
+    // Cek dari status
+    const statusTerkendala = item.status && item.status.toLowerCase() === "terkendala";
+    // Cek dari catatan
+    const hasCatatan = (item.catatan && item.catatan.length > 0) || 
+                       (item.catatan_kendala && item.catatan_kendala.length > 0);
+    
+    return statusTerkendala || hasCatatan;
+}
+
+function getCatatanKendala(item) {
+    return item.catatan || item.catatan_kendala || "-";
+}
 
 // ============================================================
 // START
@@ -26,6 +48,17 @@ const berkasForm = document.getElementById("berkasForm");
 document.addEventListener("DOMContentLoaded", function() {
     console.log("🚀 SIMPELBIZ started");
     showLogin();
+    
+    // Event listener untuk kategori - hide/show stempel
+    document.getElementById("kategori").addEventListener("change", function() {
+        const stempelField = document.getElementById("stempelField");
+        if (this.value === "Perubahan" || this.value === "Pembubaran") {
+            stempelField.style.display = "none";
+            document.getElementById("pesanStempel").value = "Tidak Perlu";
+        } else {
+            stempelField.style.display = "block";
+        }
+    });
 });
 
 // ============================================================
@@ -63,6 +96,7 @@ document.getElementById("logoutButton").addEventListener("click", function() {
     if (confirm("Apakah Anda yakin ingin logout?")) {
         showLogin();
         allData = [];
+        allPengiriman = [];
     }
 });
 
@@ -112,7 +146,29 @@ async function loadData() {
         allData = [];
     }
 
+    loadPengirimanLocal();
     renderAll();
+}
+
+// ============================================================
+// PENGIRIMAN - LOCAL STORAGE
+// ============================================================
+
+function loadPengirimanLocal() {
+    const saved = localStorage.getItem("simpelbiz_pengiriman");
+    if (saved) {
+        try {
+            allPengiriman = JSON.parse(saved);
+        } catch {
+            allPengiriman = [];
+        }
+    } else {
+        allPengiriman = [];
+    }
+}
+
+function savePengirimanLocal() {
+    localStorage.setItem("simpelbiz_pengiriman", JSON.stringify(allPengiriman));
 }
 
 // ============================================================
@@ -126,8 +182,9 @@ function renderAll() {
     renderBerkasTable(allData);
     currentPage = 1;
     renderMonitoringTable(allData);
+    renderLegalitasTable(allData);
     renderStempelTable(allData);
-    renderPengirimanTable(allData);
+    renderPengirimanTable(allPengiriman);
 }
 
 // ============================================================
@@ -149,6 +206,9 @@ function renderDashboard() {
     document.getElementById("totalKirim").textContent = pengiriman;
     document.getElementById("sidebarTotal").textContent = total;
     document.getElementById("recentCount").textContent = total + " berkas";
+
+    const legalitasCount = allData.filter(x => x.tgl_sk_setuju || x.tgl_sk).length;
+    document.getElementById("legalitasCount").textContent = legalitasCount;
 
     document.getElementById("jneCount").textContent = allData.filter(x => x.pengiriman === "JNE").length;
     document.getElementById("gosendCount").textContent = allData.filter(x => x.pengiriman === "GoSend").length;
@@ -177,7 +237,7 @@ function chartRow(label, count, total) {
 }
 
 // ============================================================
-// RENDER RECENT TABLE
+// RENDER RECENT TABLE - DENGAN DETEKSI KENDALA
 // ============================================================
 
 function renderRecentTable() {
@@ -191,23 +251,38 @@ function renderRecentTable() {
         return;
     }
 
-    table.innerHTML = recent.map(item => `
-        <tr>
-            <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
-            <td>${escapeHTML(item.kategori_entitas || "-")}</td>
-            <td>${escapeHTML(item.pesan_stempel || "-")}</td>
-            <td>${statusBadge(item.status)}</td>
-            <td>${escapeHTML(item.pengiriman || "-")}</td>
-            <td>
-                <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn-danger btn-sm" onclick="deleteData(${item.id})"><i class="fas fa-trash"></i></button>
-            </td>
-        </tr>
-    `).join("");
+    table.innerHTML = recent.map(item => {
+        const isTerkendala = isDataTerkendala(item);
+        
+        let statusBadgeHtml;
+        if (isTerkendala) {
+            statusBadgeHtml = `
+                <span class="status-badge terkendala" style="background:#fee2e2 !important; color:#dc2626 !important; border:2px solid #dc2626 !important; font-weight:700; animation:pulseKendala 1.5s infinite;">
+                    ⚠️ ${escapeHTML(item.status || "Terkendala")}
+                </span>
+            `;
+        } else {
+            statusBadgeHtml = statusBadge(item.status);
+        }
+        
+        return `
+            <tr class="${isTerkendala ? 'row-terkendala' : ''}">
+                <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
+                <td>${escapeHTML(item.kategori_entitas || "-")}</td>
+                <td>${escapeHTML(item.pesan_stempel || "-")}</td>
+                <td>${statusBadgeHtml}</td>
+                <td>${escapeHTML(item.pengiriman || "-")}</td>
+                <td>
+                    <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn-danger btn-sm" onclick="deleteData(${item.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join("");
 }
 
 // ============================================================
-// RENDER BERKAS TABLE
+// RENDER BERKAS TABLE - DENGAN DETEKSI KENDALA
 // ============================================================
 
 function renderBerkasTable(data) {
@@ -220,26 +295,252 @@ function renderBerkasTable(data) {
         return;
     }
 
+    table.innerHTML = data.map((item, index) => {
+        const isTerkendala = isDataTerkendala(item);
+        const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+        const catatan = getCatatanKendala(item);
+        
+        let statusBadgeHtml;
+        if (isTerkendala) {
+            statusBadgeHtml = `
+                <span class="status-badge terkendala" style="background:#fee2e2 !important; color:#dc2626 !important; border:2px solid #dc2626 !important; font-weight:700; animation:pulseKendala 1.5s infinite;">
+                    ⚠️ ${escapeHTML(item.status || "Terkendala")}
+                </span>
+            `;
+        } else {
+            statusBadgeHtml = statusBadge(item.status);
+        }
+        
+        return `
+            <tr class="${isTerkendala ? 'row-terkendala' : ''}">
+                <td>${index + 1}</td>
+                <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
+                <td>${escapeHTML(item.kategori_entitas || "-")}</td>
+                <td>${escapeHTML(item.bentuk_entitas || "-")}</td>
+                <td>${statusBadgeHtml}</td>
+                <td>${escapeHTML(stempelDisplay)}</td>
+                <td>${escapeHTML(item.pengiriman || "-")}</td>
+                <td>${formatDate(item.kirim_notaris)}</td>
+                <td>
+                    <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn-danger btn-sm" onclick="deleteData(${item.id})"><i class="fas fa-trash"></i></button>
+                    ${isTerkendala ? `<span class="kendala-badge" onclick="showKendala('${escapeHTML(item.nama_badan_hukum)}', '${escapeHTML(catatan)}')" style="font-size:8px; padding:2px 10px; margin-left:4px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </span>` : ''}
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+// ============================================================
+// RENDER LEGALITAS TABLE
+// ============================================================
+
+function renderLegalitasTable(data) {
+    const table = document.getElementById("legalitasTable");
+    const countEl = document.getElementById("legalitasCount");
+
+    if (!table) return;
+
+    const legalitasData = data.filter(item => item.tgl_sk_setuju || item.tgl_sk);
+
+    if (countEl) countEl.textContent = legalitasData.length;
+
+    if (!legalitasData || !legalitasData.length) {
+        table.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#7b8497;">Belum ada data legalitas yang selesai.</td></tr>`;
+        return;
+    }
+
+    table.innerHTML = legalitasData.map((item, index) => {
+        const isTerkendala = isDataTerkendala(item);
+        const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+        const skDate = item.tgl_sk_setuju || item.tgl_sk;
+        
+        let statusBadgeHtml;
+        if (isTerkendala) {
+            statusBadgeHtml = `
+                <span class="status-badge terkendala" style="background:#fee2e2 !important; color:#dc2626 !important; border:2px solid #dc2626 !important; font-weight:700; animation:pulseKendala 1.5s infinite;">
+                    ⚠️ ${escapeHTML(item.status || "Terkendala")}
+                </span>
+            `;
+        } else {
+            statusBadgeHtml = statusBadge(item.status);
+        }
+        
+        return `
+            <tr class="${isTerkendala ? 'row-terkendala' : ''}">
+                <td>${index + 1}</td>
+                <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
+                <td>${escapeHTML(item.kategori_entitas || "-")}</td>
+                <td>${escapeHTML(item.bentuk_entitas || "-")}</td>
+                <td>${statusBadgeHtml}</td>
+                <td>${skDate ? formatDate(skDate) : '-'}</td>
+                <td>${escapeHTML(stempelDisplay)}</td>
+                <td>${escapeHTML(item.pengiriman || "-")}</td>
+                <td>
+                    <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+// ============================================================
+// RENDER STEMPEL TABLE - DENGAN DETEKSI KENDALA
+// ============================================================
+
+function renderStempelTable(data) {
+    const table = document.getElementById("stempelTable");
+
+    if (!table) return;
+
+    const stempelData = data.filter(item => item.kategori_entitas === "Pendirian Baru");
+
+    if (!stempelData || !stempelData.length) {
+        table.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#7b8497;">Tidak ada data stempel (khusus Pendirian).</td></tr>`;
+        return;
+    }
+
+    table.innerHTML = stempelData.map((item, index) => {
+        const isTerkendala = isDataTerkendala(item);
+        const catatan = getCatatanKendala(item);
+        
+        let statusBadgeHtml;
+        if (isTerkendala) {
+            statusBadgeHtml = `
+                <span class="status-badge terkendala" style="background:#fee2e2 !important; color:#dc2626 !important; border:2px solid #dc2626 !important; font-weight:700; animation:pulseKendala 1.5s infinite;">
+                    ⚠️ ${escapeHTML(item.status || "Terkendala")}
+                </span>
+            `;
+        } else {
+            statusBadgeHtml = statusBadge(item.status);
+        }
+        
+        return `
+            <tr class="${isTerkendala ? 'row-terkendala' : ''}">
+                <td>${index + 1}</td>
+                <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
+                <td>${escapeHTML(item.kategori_entitas || "-")}</td>
+                <td>${escapeHTML(item.pesan_stempel || "-")}</td>
+                <td>${statusBadgeHtml}</td>
+                <td>
+                    <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
+                    ${isTerkendala ? `<span class="kendala-badge" onclick="showKendala('${escapeHTML(item.nama_badan_hukum)}', '${escapeHTML(catatan)}')" style="font-size:8px; padding:2px 10px; margin-left:4px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </span>` : ''}
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+// ============================================================
+// RENDER PENGIRIMAN TABLE
+// ============================================================
+
+function renderPengirimanTable(data) {
+    const table = document.getElementById("pengirimanTable");
+
+    if (!table) return;
+
+    if (!data || !data.length) {
+        table.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#7b8497;">Tidak ada data pengiriman.</td></tr>`;
+        return;
+    }
+
     table.innerHTML = data.map((item, index) => `
         <tr>
             <td>${index + 1}</td>
             <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
-            <td>${escapeHTML(item.kategori_entitas || "-")}</td>
-            <td>${escapeHTML(item.bentuk_entitas || "-")}</td>
-            <td>${statusBadge(item.status)}</td>
-            <td>${escapeHTML(item.pesan_stempel || "-")}</td>
-            <td>${escapeHTML(item.pengiriman || "-")}</td>
-            <td>${formatDate(item.kirim_notaris)}</td>
+            <td>${escapeHTML(item.kategori || "-")}</td>
+            <td>${escapeHTML(item.metode_pengiriman || "-")}</td>
+            <td>${escapeHTML(item.no_resi || "-")}</td>
+            <td>${item.tanggal_kirim ? formatDate(item.tanggal_kirim) : '-'}</td>
+            <td>${escapeHTML(item.keterangan || "-")}</td>
+            <td>${escapeHTML(item.status || "Belum Dikirim")}</td>
             <td>
-                <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn-danger btn-sm" onclick="deleteData(${item.id})"><i class="fas fa-trash"></i></button>
+                <button class="btn-outline btn-sm" onclick="editPengiriman(${item.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn-danger btn-sm" onclick="deletePengiriman(${item.id})"><i class="fas fa-trash"></i></button>
             </td>
         </tr>
     `).join("");
 }
 
 // ============================================================
-// RENDER MONITORING TABLE - DENGAN KENDALA & PAGINATION
+// STATUS BADGE
+// ============================================================
+
+function statusBadge(status) {
+    let cls = String(status || "").toLowerCase();
+    let displayStatus = status || "-";
+    
+    if (cls.includes("selesai")) { cls = "selesai"; }
+    else if (cls.includes("seleksi")) { cls = "seleksi"; }
+    else if (cls.includes("terkendala")) { cls = "terkendala"; }
+    else if (cls.includes("menunggu")) { cls = "menunggu"; }
+    else if (cls.includes("proses")) { cls = "proses"; }
+    else { cls = "proses"; }
+    
+    return `<span class="status-badge ${cls}">${escapeHTML(displayStatus)}</span>`;
+}
+
+// ============================================================
+// GET STATUS CLASS
+// ============================================================
+
+function getStatusClass(status) {
+    let cls = String(status || "").toLowerCase();
+    if (cls.includes("selesai")) return "selesai";
+    if (cls.includes("seleksi")) return "seleksi";
+    if (cls.includes("terkendala")) return "terkendala";
+    if (cls.includes("menunggu")) return "menunggu";
+    if (cls.includes("proses")) return "proses";
+    return "proses";
+}
+
+// ============================================================
+// GET PROGRESS STEPS
+// ============================================================
+
+function getProgressSteps(item) {
+    const steps = [
+        { key: 'kirim_notaris', done: !!item.kirim_notaris },
+        { key: 'terima_minuta', done: !!item.terima_minuta },
+        { key: 'jadwal_ttd', done: !!item.jadwal_ttd },
+        { key: 'tgl_sk_setuju', done: !!(item.tgl_sk_setuju || item.tgl_sk) },
+        { key: 'pengiriman', done: item.pengiriman && item.pengiriman !== 'Belum Dikirim' }
+    ];
+    
+    let result = [];
+    let allDone = true;
+    
+    steps.forEach((step, index) => {
+        const isDone = step.done;
+        const isPending = !isDone;
+        const isActive = isPending && allDone;
+        
+        let dotStatus = 'pending';
+        if (isDone) dotStatus = 'done';
+        else if (isActive) dotStatus = 'active';
+        
+        result.push({ type: 'dot', status: dotStatus });
+        
+        if (index < steps.length - 1) {
+            let lineStatus = 'pending';
+            if (isDone) lineStatus = 'done';
+            else if (isActive) lineStatus = 'active';
+            result.push({ type: 'line', status: lineStatus });
+        }
+        
+        if (!isDone) allDone = false;
+    });
+    
+    return result;
+}
+
+// ============================================================
+// RENDER MONITORING TABLE - DENGAN DETEKSI KENDALA OTOMATIS
 // ============================================================
 
 function renderMonitoringTable(data) {
@@ -248,7 +549,6 @@ function renderMonitoringTable(data) {
 
     if (!table) return;
 
-    // Filter data
     filteredMonitoringData = filterMonitoringData(data);
     const totalItems = filteredMonitoringData.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -256,37 +556,47 @@ function renderMonitoringTable(data) {
     if (countEl) countEl.textContent = totalItems + " berkas";
 
     if (!filteredMonitoringData || !filteredMonitoringData.length) {
-        table.innerHTML = `<tr><td colspan="16" style="text-align:center;padding:30px;color:#7b8497;">Belum ada data untuk monitoring.</td></tr>`;
+        table.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:30px;color:#7b8497;">Belum ada data untuk monitoring.</td></tr>`;
         updatePagination(0, 0);
         return;
     }
 
-    // Pagination
     if (currentPage > totalPages) currentPage = totalPages;
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
     const pageData = filteredMonitoringData.slice(startIndex, endIndex);
 
     table.innerHTML = pageData.map((item, index) => {
-        const statusClass = getStatusClass(item.status);
         const progressSteps = getProgressSteps(item);
-        const isTerkendala = item.status && item.status.toLowerCase() === "terkendala";
-        const catatan = item.catatan || item.catatan_kendala || "-";
+        const isTerkendala = isDataTerkendala(item);
+        const catatan = getCatatanKendala(item);
+        const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+        
+        let statusBadgeHtml;
+        if (isTerkendala) {
+            statusBadgeHtml = `
+                <span class="status-badge terkendala" style="background:#fee2e2 !important; color:#dc2626 !important; border:2px solid #dc2626 !important; font-weight:700; animation:pulseKendala 1.5s infinite;">
+                    ⚠️ ${escapeHTML(item.status || "Terkendala")}
+                </span>
+            `;
+        } else {
+            statusBadgeHtml = statusBadge(item.status);
+        }
+        
+        const rowClass = isTerkendala ? 'row-terkendala' : '';
         
         return `
-            <tr class="${isTerkendala ? 'row-terkendala' : ''}">
+            <tr class="${rowClass}">
                 <td>${startIndex + index + 1}</td>
                 <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
                 <td>${escapeHTML(item.kategori_entitas || "-")}</td>
                 <td>${escapeHTML(item.bentuk_entitas || "-")}</td>
-                <td>${statusBadge(item.status)}</td>
-                <td>${item.terima_folder ? formatDate(item.terima_folder) : '-'}</td>
+                <td>${statusBadgeHtml}</td>
                 <td>${item.kirim_notaris ? formatDate(item.kirim_notaris) : '-'}</td>
                 <td>${item.terima_minuta ? formatDate(item.terima_minuta) : '-'}</td>
                 <td>${item.jadwal_ttd ? formatDate(item.jadwal_ttd) : '-'}</td>
-                <td>${item.salinan_diberikan ? formatDate(item.salinan_diberikan) : '-'}</td>
                 <td>${item.tgl_sk_setuju ? formatDate(item.tgl_sk_setuju) : '-'}</td>
-                <td>${escapeHTML(item.pesan_stempel || "-")}</td>
+                <td>${escapeHTML(stempelDisplay)}</td>
                 <td>${escapeHTML(item.pengiriman || "-")}</td>
                 <td>
                     <div class="progress-dots">
@@ -301,36 +611,14 @@ function renderMonitoringTable(data) {
                     </span>` : '-'}
                 </td>
                 <td>
-                    <div class="aksi-group">
-                        <button class="btn-view btn-sm" title="Lihat Detail" onclick="viewDetail(${item.id})"><i class="fas fa-eye"></i></button>
-                        <button class="btn-outline btn-sm" title="Edit Data" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
-                    </div>
+                    <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
                 </td>
             </tr>
         `;
     }).join("");
 
-    // Update pagination
     updatePagination(currentPage, totalPages);
-    updateScrollHint();
 }
-
-// ============================================================
-// SCROLL HINT - tampil hanya kalau tabel memang overflow
-// ============================================================
-
-function updateScrollHint() {
-    const wrapper = document.getElementById('monitoringTableWrapper');
-    const hint = document.getElementById('monitoringScrollHint');
-    if (!wrapper || !hint) return;
-
-    requestAnimationFrame(() => {
-        const isOverflowing = wrapper.scrollWidth > wrapper.clientWidth + 4;
-        hint.classList.toggle('show', isOverflowing);
-    });
-}
-
-window.addEventListener('resize', updateScrollHint);
 
 // ============================================================
 // FILTER MONITORING DATA
@@ -344,12 +632,12 @@ function filterMonitoringData(data) {
 
     return (data || allData).filter(item => {
         const text = (item.nama_badan_hukum || "") + " " + (item.kategori_entitas || "");
-        const isTerkendala = item.status && item.status.toLowerCase() === "terkendala";
-        const hasKendala = item.catatan && item.catatan.length > 0;
+        const isTerkendala = isDataTerkendala(item);
+        const hasKendala = (item.catatan && item.catatan.length > 0) || (item.catatan_kendala && item.catatan_kendala.length > 0);
         
         let matchKendala = true;
-        if (kendala === 'ada') matchKendala = isTerkendala && hasKendala;
-        else if (kendala === 'tidak') matchKendala = !isTerkendala || !hasKendala;
+        if (kendala === 'ada') matchKendala = isTerkendala || hasKendala;
+        else if (kendala === 'tidak') matchKendala = !isTerkendala && !hasKendala;
         
         return (
             (!search || text.toLowerCase().includes(search)) &&
@@ -434,259 +722,6 @@ function showKendala(nama, catatan) {
         confirmButtonText: 'Tutup',
         width: '500px'
     });
-}
-
-// ============================================================
-// DETAIL BERKAS MODAL - VIEW CRUD LENGKAP
-// (Menampilkan SEMUA field, termasuk Salinan Diberikan, No. Resi,
-//  Tanggal Kirim/Ambil, dll yang tidak muat di tabel monitoring)
-// ============================================================
-
-let detailViewingId = null;
-const detailModal = document.getElementById('detailModal');
-const detailModalBody = document.getElementById('detailModalBody');
-
-function detailTimelineStep(icon, label, value, isLast) {
-    const done = !!value;
-    return `
-        <div class="detail-timeline-item">
-            <div class="detail-timeline-marker">
-                <span class="detail-timeline-dot ${done ? 'done' : 'pending'}">
-                    <i class="fas ${done ? 'fa-check' : icon}"></i>
-                </span>
-                ${!isLast ? `<span class="detail-timeline-line ${done ? 'done' : ''}"></span>` : ''}
-            </div>
-            <div class="detail-timeline-content">
-                <div class="detail-timeline-label">${label}</div>
-                <div class="detail-timeline-date ${done ? '' : 'empty'}">
-                    ${done ? formatDate(value) : 'Belum ada tanggal'}
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function detailInfoItem(icon, label, value) {
-    return `
-        <div class="detail-info-item">
-            <div class="detail-info-label"><i class="fas ${icon}"></i> ${label}</div>
-            <div class="detail-info-value">${escapeHTML(value || '-')}</div>
-        </div>
-    `;
-}
-
-window.viewDetail = function(id) {
-    const item = allData.find(x => x.id === id);
-    if (!item) {
-        Swal.fire({ icon: 'error', title: 'Data tidak ditemukan!' });
-        return;
-    }
-
-    detailViewingId = id;
-
-    document.getElementById('detailModalTitle').textContent = item.nama_badan_hukum || '-';
-    document.getElementById('detailModalSubtitle').textContent =
-        `${item.kategori_entitas || '-'} • ${item.bentuk_entitas || '-'}`;
-
-    const isTerkendala = item.status && item.status.toLowerCase() === 'terkendala';
-    const catatan = item.catatan || item.catatan_kendala || '';
-    const kirimNotaris = item.kirim_notaris || item.tgl_dikirim_notaris;
-    const tglSK = item.tgl_sk_setuju || item.tgl_sk;
-
-    detailModalBody.innerHTML = `
-        <div class="detail-top-badges">
-            ${statusBadge(item.status)}
-            <span class="detail-chip"><i class="fas fa-stamp"></i> ${escapeHTML(item.pesan_stempel || '-')}</span>
-            <span class="detail-chip"><i class="fas fa-truck"></i> ${escapeHTML(item.pengiriman || '-')}</span>
-        </div>
-
-        <h3 class="detail-section-title"><i class="fas fa-timeline"></i> Timeline Proses Berkas</h3>
-        <div class="detail-timeline">
-            ${detailTimelineStep('fa-inbox', 'Terima Folder Baru dari Client', item.terima_folder, false)}
-            ${detailTimelineStep('fa-paper-plane', 'Dikirim ke Notaris', kirimNotaris, false)}
-            ${detailTimelineStep('fa-file-alt', 'Terima Minuta (Notaris)', item.terima_minuta, false)}
-            ${detailTimelineStep('fa-pen-fancy', 'Jadwal Tanda Tangan (TTD)', item.jadwal_ttd, false)}
-            ${detailTimelineStep('fa-copy', 'Salinan Diberikan Hari/Tgl', item.salinan_diberikan, false)}
-            ${detailTimelineStep('fa-certificate', 'SK Kementerian Disetujui', tglSK, true)}
-        </div>
-
-        <h3 class="detail-section-title"><i class="fas fa-circle-info"></i> Informasi Tambahan</h3>
-        <div class="detail-info-grid">
-            ${detailInfoItem('fa-tag', 'Kategori Layanan', item.kategori_entitas)}
-            ${detailInfoItem('fa-layer-group', 'Bentuk Entitas', item.bentuk_entitas)}
-            ${detailInfoItem('fa-stamp', 'Pesan Stempel', item.pesan_stempel)}
-            ${detailInfoItem('fa-flag', 'Status Pengerjaan SK', item.status)}
-            ${detailInfoItem('fa-truck', 'Metode Pengiriman', item.pengiriman)}
-            ${detailInfoItem('fa-barcode', 'No. Resi / Nama Pengambil', item.no_resi)}
-            ${detailInfoItem('fa-calendar-check', 'Tanggal Kirim / Ambil', item.tgl_kirim_ambil ? formatDate(item.tgl_kirim_ambil) : '-')}
-            ${detailInfoItem('fa-copy', 'Salinan Diberikan', item.salinan_diberikan ? formatDate(item.salinan_diberikan) : '-')}
-        </div>
-
-        ${isTerkendala || catatan ? `
-        <div class="detail-kendala-alert">
-            <h4><i class="fas fa-exclamation-triangle"></i> Catatan Kendala</h4>
-            <p>${escapeHTML(catatan || 'Tidak ada catatan detail.')}</p>
-        </div>` : ''}
-    `;
-
-    detailModal.classList.remove('hidden');
-};
-
-function closeDetailModal() {
-    detailModal.classList.add('hidden');
-    detailViewingId = null;
-}
-
-document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
-document.getElementById('detailCloseBtn').addEventListener('click', closeDetailModal);
-
-document.getElementById('detailEditBtn').addEventListener('click', function() {
-    if (detailViewingId == null) return;
-    const id = detailViewingId;
-    closeDetailModal();
-    editData(id);
-});
-
-detailModal.addEventListener('click', function(e) {
-    if (e.target === this) closeDetailModal();
-});
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && !detailModal.classList.contains('hidden')) {
-        closeDetailModal();
-    }
-});
-
-// ============================================================
-// RENDER STEMPEL TABLE
-// ============================================================
-
-function renderStempelTable(data) {
-    const table = document.getElementById("stempelTable");
-
-    if (!table) return;
-
-    if (!data || !data.length) {
-        table.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#7b8497;">Tidak ada data.</td></tr>`;
-        return;
-    }
-
-    table.innerHTML = data.map((item, index) => `
-        <tr>
-            <td>${index + 1}</td>
-            <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
-            <td>${escapeHTML(item.kategori_entitas || "-")}</td>
-            <td>${escapeHTML(item.pesan_stempel || "-")}</td>
-            <td>${statusBadge(item.status)}</td>
-            <td>
-                <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
-            </td>
-        </tr>
-    `).join("");
-}
-
-// ============================================================
-// RENDER PENGIRIMAN TABLE
-// ============================================================
-
-function renderPengirimanTable(data) {
-    const table = document.getElementById("pengirimanTable");
-
-    if (!table) return;
-
-    if (!data || !data.length) {
-        table.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#7b8497;">Tidak ada data.</td></tr>`;
-        return;
-    }
-
-    table.innerHTML = data.map((item, index) => `
-        <tr>
-            <td>${index + 1}</td>
-            <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
-            <td>${escapeHTML(item.kategori_entitas || "-")}</td>
-            <td>${escapeHTML(item.pengiriman || "-")}</td>
-            <td>${escapeHTML(item.no_resi || "-")}</td>
-            <td>${item.tgl_kirim_ambil ? formatDate(item.tgl_kirim_ambil) : '-'}</td>
-            <td>${statusBadge(item.status)}</td>
-            <td>
-                <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
-            </td>
-        </tr>
-    `).join("");
-}
-
-// ============================================================
-// STATUS BADGE
-// ============================================================
-
-function statusBadge(status) {
-    let cls = String(status || "").toLowerCase();
-    let displayStatus = status || "-";
-    
-    if (cls.includes("selesai")) { cls = "selesai"; }
-    else if (cls.includes("seleksi")) { cls = "seleksi"; }
-    else if (cls.includes("terkendala")) { cls = "terkendala"; }
-    else if (cls.includes("menunggu")) { cls = "menunggu"; }
-    else if (cls.includes("proses")) { cls = "proses"; }
-    else { cls = "proses"; }
-    
-    return `<span class="status-badge ${cls}">${escapeHTML(displayStatus)}</span>`;
-}
-
-// ============================================================
-// GET STATUS CLASS
-// ============================================================
-
-function getStatusClass(status) {
-    let cls = String(status || "").toLowerCase();
-    if (cls.includes("selesai")) return "selesai";
-    if (cls.includes("seleksi")) return "seleksi";
-    if (cls.includes("terkendala")) return "terkendala";
-    if (cls.includes("menunggu")) return "menunggu";
-    if (cls.includes("proses")) return "proses";
-    return "proses";
-}
-
-// ============================================================
-// GET PROGRESS STEPS
-// ============================================================
-
-function getProgressSteps(item) {
-    const steps = [
-        { key: 'terima_folder', done: !!item.terima_folder },
-        { key: 'kirim_notaris', done: !!item.kirim_notaris },
-        { key: 'terima_minuta', done: !!item.terima_minuta },
-        { key: 'jadwal_ttd', done: !!item.jadwal_ttd },
-        { key: 'salinan_diberikan', done: !!item.salinan_diberikan },
-        { key: 'tgl_sk_setuju', done: !!(item.tgl_sk_setuju || item.tgl_sk) },
-        { key: 'pengiriman', done: item.pengiriman && item.pengiriman !== 'Belum Dikirim' }
-    ];
-    
-    let result = [];
-    let allDone = true;
-    
-    steps.forEach((step, index) => {
-        const isDone = step.done;
-        const isPending = !isDone;
-        const isActive = isPending && allDone;
-        
-        let dotStatus = 'pending';
-        if (isDone) dotStatus = 'done';
-        else if (isActive) dotStatus = 'active';
-        
-        result.push({ type: 'dot', status: dotStatus });
-        
-        if (index < steps.length - 1) {
-            let lineStatus = 'pending';
-            if (isDone) lineStatus = 'done';
-            else if (isActive) lineStatus = 'active';
-            result.push({ type: 'line', status: lineStatus });
-        }
-        
-        if (!isDone) allDone = false;
-    });
-    
-    return result;
 }
 
 // ============================================================
@@ -783,6 +818,33 @@ document.getElementById("filterKendala").addEventListener("change", function() {
 });
 
 // ============================================================
+// SEARCH & FILTER - LEGALITAS
+// ============================================================
+
+document.getElementById("searchLegalitas").addEventListener("input", function() {
+    renderLegalitasTable(filterLegalitas());
+});
+
+document.getElementById("filterLegalitasKategori").addEventListener("change", function() {
+    renderLegalitasTable(filterLegalitas());
+});
+
+function filterLegalitas() {
+    const search = document.getElementById("searchLegalitas").value.toLowerCase().trim();
+    const kategori = document.getElementById("filterLegalitasKategori").value;
+
+    return allData.filter(item => {
+        const text = (item.nama_badan_hukum || "") + " " + (item.kategori_entitas || "");
+        const isSelesai = item.tgl_sk_setuju || item.tgl_sk;
+        return (
+            isSelesai &&
+            (!search || text.toLowerCase().includes(search)) &&
+            (!kategori || item.kategori_entitas === kategori)
+        );
+    });
+}
+
+// ============================================================
 // SEARCH & FILTER - STEMPEL
 // ============================================================
 
@@ -799,6 +861,7 @@ function filterStempel() {
     const stempel = document.getElementById("filterStempel").value;
 
     return allData.filter(item => {
+        if (item.kategori_entitas !== "Pendirian Baru") return false;
         const text = (item.nama_badan_hukum || "") + " " + (item.pesan_stempel || "");
         return (
             (!search || text.toLowerCase().includes(search)) &&
@@ -821,13 +884,13 @@ document.getElementById("filterPengiriman").addEventListener("change", function(
 
 function filterPengiriman() {
     const search = document.getElementById("searchPengiriman").value.toLowerCase().trim();
-    const pengiriman = document.getElementById("filterPengiriman").value;
+    const metode = document.getElementById("filterPengiriman").value;
 
-    return allData.filter(item => {
-        const text = (item.nama_badan_hukum || "") + " " + (item.pengiriman || "");
+    return allPengiriman.filter(item => {
+        const text = (item.nama_badan_hukum || "") + " " + (item.metode_pengiriman || "");
         return (
             (!search || text.toLowerCase().includes(search)) &&
-            (!pengiriman || item.pengiriman === pengiriman)
+            (!metode || item.metode_pengiriman === metode)
         );
     });
 }
@@ -857,7 +920,8 @@ function navigateToPage(page) {
         dashboard: ['Dashboard Monitoring', 'Pantau progress setiap berkas notaris secara real-time'],
         berkas: ['Data Berkas', 'Kelola seluruh data berkas notaris dengan mudah'],
         monitoring: ['Monitoring Semua Berkas', 'Lihat progress seluruh berkas dari awal hingga selesai'],
-        stempel: ['Pesan / Status Stempel', 'Kelola status pemesanan stempel perusahaan'],
+        legalitas: ['Legalitas Sudah Selesai', 'Daftar berkas yang legalitasnya sudah selesai'],
+        stempel: ['Pesan / Status Stempel', 'Kelola status pemesanan stempel perusahaan (Khusus Pendirian)'],
         pengiriman: ['Data Pengiriman', 'Kelola metode pengiriman berkas'],
         laporan: ['Laporan PDF', 'Cetak laporan data berkas dengan berbagai format']
     };
@@ -880,6 +944,8 @@ document.querySelectorAll('.nav-item[data-page]').forEach(item => {
         } else if (page === 'monitoring') {
             currentPage = 1;
             renderMonitoringTable(allData);
+        } else if (page === 'legalitas') {
+            renderLegalitasTable(filterLegalitas());
         } else if (page === 'stempel') {
             renderStempelTable(filterStempel());
         } else if (page === 'pengiriman') {
@@ -911,8 +977,9 @@ function openAddModal() {
     document.getElementById('status').value = 'Sedang Dalam Proses';
     document.getElementById('metodePengiriman').value = 'Belum Dikirim';
     document.getElementById('pesanStempel').value = 'Dipesan lewat SIMPELBIZ';
-    document.getElementById('terimaFolder').value = new Date().toISOString().split('T')[0];
     document.getElementById('berkasId').value = '';
+    
+    document.getElementById('stempelField').style.display = 'block';
     
     const saveButton = document.getElementById('saveButton');
     saveButton.innerHTML = '<i class="fas fa-save"></i> Simpan Data Folder';
@@ -945,9 +1012,16 @@ window.editData = function(id) {
     document.getElementById('namaBadanHukum').value = item.nama_badan_hukum || '';
     document.getElementById('kategori').value = item.kategori_entitas || '';
     document.getElementById('bentukEntitas').value = item.bentuk_entitas || '';
-    document.getElementById('pesanStempel').value = item.pesan_stempel || 'Dipesan lewat SIMPELBIZ';
+    
+    if (item.kategori_entitas === 'Perubahan' || item.kategori_entitas === 'Pembubaran') {
+        document.getElementById('stempelField').style.display = 'none';
+        document.getElementById('pesanStempel').value = 'Tidak Perlu';
+    } else {
+        document.getElementById('stempelField').style.display = 'block';
+        document.getElementById('pesanStempel').value = item.pesan_stempel || 'Dipesan lewat SIMPELBIZ';
+    }
+    
     document.getElementById('status').value = item.status || 'Sedang Dalam Proses';
-    document.getElementById('terimaFolder').value = item.terima_folder || '';
     document.getElementById('tglDikirimNotaris').value = item.tgl_dikirim_notaris || item.kirim_notaris || '';
     document.getElementById('jadwalTTD').value = item.jadwal_ttd || '';
     document.getElementById('terimaMinuta').value = item.terima_minuta || '';
@@ -1003,13 +1077,15 @@ berkasForm.addEventListener('submit', async function(e) {
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
 
+    const kategori = document.getElementById('kategori').value;
+    const isPerubahan = kategori === 'Perubahan' || kategori === 'Pembubaran';
+    
     const payload = {
         nama_badan_hukum: document.getElementById('namaBadanHukum').value.trim(),
-        kategori_entitas: document.getElementById('kategori').value,
+        kategori_entitas: kategori,
         bentuk_entitas: document.getElementById('bentukEntitas').value,
-        pesan_stempel: document.getElementById('pesanStempel').value,
+        pesan_stempel: isPerubahan ? 'Tidak Perlu' : document.getElementById('pesanStempel').value,
         status: document.getElementById('status').value,
-        terima_folder: document.getElementById('terimaFolder').value || null,
         tgl_dikirim_notaris: document.getElementById('tglDikirimNotaris').value || null,
         jadwal_ttd: document.getElementById('jadwalTTD').value || null,
         terima_minuta: document.getElementById('terimaMinuta').value || null,
@@ -1149,6 +1225,126 @@ document.getElementById('dashboardToBerkas').addEventListener('click', function(
 });
 
 // ============================================================
+// PENGIRIMAN CRUD
+// ============================================================
+
+document.getElementById('tambahPengirimanBtn').addEventListener('click', function() {
+    editingPengirimanId = null;
+    document.getElementById('pengirimanForm').reset();
+    document.getElementById('pengirimanError').textContent = '';
+    document.getElementById('savePengirimanBtn').innerHTML = '<i class="fas fa-save"></i> Simpan Pengiriman';
+    document.getElementById('pengirimanModal').classList.remove('hidden');
+});
+
+document.getElementById('closePengirimanModal').addEventListener('click', function() {
+    document.getElementById('pengirimanModal').classList.add('hidden');
+});
+
+document.getElementById('cancelPengirimanModal').addEventListener('click', function() {
+    document.getElementById('pengirimanModal').classList.add('hidden');
+});
+
+document.getElementById('pengirimanModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        document.getElementById('pengirimanModal').classList.add('hidden');
+    }
+});
+
+window.editPengiriman = function(id) {
+    const item = allPengiriman.find(x => x.id === id);
+    if (!item) {
+        Swal.fire({ icon: 'error', title: 'Data tidak ditemukan!' });
+        return;
+    }
+
+    editingPengirimanId = id;
+    document.getElementById('pNamaBadanHukum').value = item.nama_badan_hukum || '';
+    document.getElementById('pKategori').value = item.kategori || '';
+    document.getElementById('pMetodePengiriman').value = item.metode_pengiriman || '';
+    document.getElementById('pNoResi').value = item.no_resi || '';
+    document.getElementById('pTglKirim').value = item.tanggal_kirim || '';
+    document.getElementById('pKeterangan').value = item.keterangan || '';
+    document.getElementById('pengirimanError').textContent = '';
+    document.getElementById('savePengirimanBtn').innerHTML = '<i class="fas fa-save"></i> Update Pengiriman';
+    document.getElementById('pengirimanModal').classList.remove('hidden');
+};
+
+pengirimanForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const button = document.getElementById('savePengirimanBtn');
+    const errorEl = document.getElementById('pengirimanError');
+    errorEl.textContent = '';
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+
+    const payload = {
+        nama_badan_hukum: document.getElementById('pNamaBadanHukum').value.trim(),
+        kategori: document.getElementById('pKategori').value,
+        metode_pengiriman: document.getElementById('pMetodePengiriman').value,
+        no_resi: document.getElementById('pNoResi').value.trim(),
+        tanggal_kirim: document.getElementById('pTglKirim').value,
+        keterangan: document.getElementById('pKeterangan').value.trim(),
+        status: document.getElementById('pMetodePengiriman').value === 'Belum Dikirim' ? 'Belum Dikirim' : 'Dikirim'
+    };
+
+    if (!payload.nama_badan_hukum || !payload.kategori || !payload.metode_pengiriman || !payload.tanggal_kirim) {
+        errorEl.textContent = '⚠️ Nama, Kategori, Metode Pengiriman, dan Tanggal Kirim wajib diisi!';
+        button.disabled = false;
+        button.innerHTML = editingPengirimanId ? '<i class="fas fa-save"></i> Update Pengiriman' : '<i class="fas fa-save"></i> Simpan Pengiriman';
+        return;
+    }
+
+    if (editingPengirimanId) {
+        const index = allPengiriman.findIndex(x => x.id === editingPengirimanId);
+        if (index !== -1) {
+            allPengiriman[index] = { ...allPengiriman[index], ...payload };
+        }
+    } else {
+        const newId = allPengiriman.length > 0 ? Math.max(...allPengiriman.map(x => x.id)) + 1 : 1;
+        allPengiriman.unshift({ id: newId, ...payload });
+    }
+
+    savePengirimanLocal();
+    renderPengirimanTable(filterPengiriman());
+    document.getElementById('pengirimanModal').classList.add('hidden');
+    button.disabled = false;
+    button.innerHTML = editingPengirimanId ? '<i class="fas fa-save"></i> Update Pengiriman' : '<i class="fas fa-save"></i> Simpan Pengiriman';
+    
+    Swal.fire({
+        icon: 'success',
+        title: editingPengirimanId ? '✅ Pengiriman diperbarui!' : '✅ Pengiriman ditambahkan!',
+        timer: 1500,
+        showConfirmButton: false
+    });
+    
+    editingPengirimanId = null;
+});
+
+window.deletePengiriman = function(id) {
+    const item = allPengiriman.find(x => x.id === id);
+    if (!item) return;
+    
+    Swal.fire({
+        title: '⚠️ Hapus Pengiriman?',
+        text: `Anda yakin ingin menghapus pengiriman "${item.nama_badan_hukum}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#6C63FF',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            allPengiriman = allPengiriman.filter(x => x.id !== id);
+            savePengirimanLocal();
+            renderPengirimanTable(filterPengiriman());
+            Swal.fire({ icon: 'success', title: '✅ Pengiriman dihapus!', timer: 1500, showConfirmButton: false });
+        }
+    });
+};
+
+// ============================================================
 // EXPORT FUNCTIONS
 // ============================================================
 
@@ -1165,16 +1361,19 @@ function exportAllPDF() {
         doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
         doc.text(`Total Data: ${allData.length} berkas`, 14, 33);
         
-        const tableData = allData.map(item => [
-            item.nama_badan_hukum || '-',
-            item.kategori_entitas || '-',
-            item.bentuk_entitas || '-',
-            item.status || '-',
-            item.pesan_stempel || '-',
-            item.pengiriman || '-',
-            item.kirim_notaris ? formatDate(item.kirim_notaris) : '-',
-            item.tgl_sk_setuju ? formatDate(item.tgl_sk_setuju) : '-'
-        ]);
+        const tableData = allData.map(item => {
+            const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+            return [
+                item.nama_badan_hukum || '-',
+                item.kategori_entitas || '-',
+                item.bentuk_entitas || '-',
+                item.status || '-',
+                stempelDisplay,
+                item.pengiriman || '-',
+                item.kirim_notaris ? formatDate(item.kirim_notaris) : '-',
+                item.tgl_sk_setuju ? formatDate(item.tgl_sk_setuju) : '-'
+            ];
+        });
         
         doc.autoTable({
             head: [['Nama', 'Kategori', 'Bentuk', 'Status', 'Stempel', 'Pengiriman', 'Kirim Notaris', 'SK Setuju']],
@@ -1186,6 +1385,54 @@ function exportAllPDF() {
         });
         
         doc.save('Laporan_Semua_Data_SIMPELBIZ.pdf');
+        Swal.fire({ icon: 'success', title: '✅ PDF Berhasil Diekspor!', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Gagal Export PDF!', text: err.message });
+    }
+}
+
+function exportLegalitasPDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        
+        const legalitasData = allData.filter(item => item.tgl_sk_setuju || item.tgl_sk);
+        
+        doc.setFontSize(22);
+        doc.setTextColor('#6C63FF');
+        doc.text('SIMPELBIZ - Laporan Legalitas Selesai', 14, 25);
+        doc.setFontSize(10);
+        doc.setTextColor('#666');
+        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 33);
+        doc.text(`Total Legalitas Selesai: ${legalitasData.length} berkas`, 14, 40);
+        
+        const tableData = legalitasData.map((item, index) => {
+            const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+            return [
+                index + 1,
+                item.nama_badan_hukum || '-',
+                item.kategori_entitas || '-',
+                item.bentuk_entitas || '-',
+                item.status || '-',
+                item.tgl_sk_setuju ? formatDate(item.tgl_sk_setuju) : '-',
+                stempelDisplay
+            ];
+        });
+        
+        doc.autoTable({
+            head: [['No', 'Nama Badan Hukum', 'Kategori', 'Bentuk', 'Status', 'Tgl SK Setuju', 'Stempel']],
+            body: tableData,
+            startY: 48,
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: '#10B981', textColor: '#fff' },
+            alternateRowStyles: { fillColor: '#F0F2F8' }
+        });
+        
+        doc.setFontSize(10);
+        doc.setTextColor('#666');
+        doc.text('© 2026 Penerbit Aditya Rizki Ramadhan S.Kom - All Rights Reserved', 14, doc.internal.pageSize.height - 10);
+        
+        doc.save('Laporan_Legalitas_Selesai_SIMPELBIZ.pdf');
         Swal.fire({ icon: 'success', title: '✅ PDF Berhasil Diekspor!', timer: 1500, showConfirmButton: false });
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Gagal Export PDF!', text: err.message });
@@ -1210,6 +1457,7 @@ function exportDashboardPDF() {
         const seleksi = allData.filter(d => d.status && d.status.toLowerCase() === 'seleksi').length;
         const terkendala = allData.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
         const pengiriman = allData.filter(d => d.pengiriman === 'JNE' || d.pengiriman === 'GoSend').length;
+        const legalitas = allData.filter(d => d.tgl_sk_setuju || d.tgl_sk).length;
         
         doc.autoTable({
             head: [['Statistik', 'Jumlah']],
@@ -1218,7 +1466,8 @@ function exportDashboardPDF() {
                 ['Selesai / Seleksi', selesai + seleksi],
                 ['Dalam Proses', proses],
                 ['Terkendala', terkendala],
-                ['Dalam Pengiriman', pengiriman]
+                ['Dalam Pengiriman', pengiriman],
+                ['Legalitas Selesai', legalitas]
             ],
             startY: 40,
             styles: { fontSize: 12 },
@@ -1232,69 +1481,10 @@ function exportDashboardPDF() {
     }
 }
 
-function exportFilteredPDF() {
-    Swal.fire({
-        title: 'Pilih Status',
-        input: 'select',
-        inputOptions: {
-            'Semua': 'Semua',
-            'Seleksi': 'Seleksi',
-            'Proses': 'Proses',
-            'Terkendala': 'Terkendala',
-            'Selesai': 'Selesai',
-            'Sedang Dalam Proses': 'Sedang Dalam Proses',
-            'Menunggu Notaris': 'Menunggu Notaris'
-        },
-        confirmButtonColor: '#6C63FF',
-        confirmButtonText: 'Export PDF'
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            const filter = result.value;
-            const filtered = filter === 'Semua' ? allData : allData.filter(d => d.status === filter);
-            
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-                
-                doc.setFontSize(18);
-                doc.setTextColor('#6C63FF');
-                doc.text(`SIMPELBIZ - Data Status: ${filter}`, 14, 20);
-                doc.setFontSize(10);
-                doc.setTextColor('#666');
-                doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
-                doc.text(`Total Data: ${filtered.length} berkas`, 14, 33);
-                
-                const tableData = filtered.map(item => [
-                    item.nama_badan_hukum || '-',
-                    item.kategori_entitas || '-',
-                    item.bentuk_entitas || '-',
-                    item.status || '-',
-                    item.pengiriman || '-',
-                    item.kirim_notaris ? formatDate(item.kirim_notaris) : '-'
-                ]);
-                
-                doc.autoTable({
-                    head: [['Nama', 'Kategori', 'Bentuk', 'Status', 'Pengiriman', 'Kirim Notaris']],
-                    body: tableData,
-                    startY: 40,
-                    styles: { fontSize: 8 },
-                    headStyles: { fillColor: '#6C63FF', textColor: '#fff' },
-                    alternateRowStyles: { fillColor: '#F0F2F8' }
-                });
-                
-                doc.save(`Laporan_Status_${filter}_SIMPELBIZ.pdf`);
-                Swal.fire({ icon: 'success', title: '✅ PDF Berhasil Diekspor!', timer: 1500, showConfirmButton: false });
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Gagal Export PDF!', text: err.message });
-            }
-        }
-    });
-}
-
 function exportMonitoringPDF() {
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
         
         doc.setFontSize(18);
         doc.setTextColor('#6C63FF');
@@ -1304,41 +1494,37 @@ function exportMonitoringPDF() {
         doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
         doc.text(`Total Berkas: ${allData.length}`, 14, 33);
         
-        let yPos = 45;
-        allData.forEach((item, index) => {
-            if (yPos > 250) {
-                doc.addPage();
-                yPos = 20;
-            }
-            
-            const statusColor = item.status && item.status.toLowerCase() === 'selesai' ? '#10b981' :
-                               item.status && item.status.toLowerCase() === 'terkendala' ? '#ef4444' :
-                               '#6C63FF';
-            
-            doc.setFontSize(12);
-            doc.setTextColor('#1A1A2E');
-            doc.text(`${index + 1}. ${item.nama_badan_hukum || '-'}`, 14, yPos);
-            
-            doc.setFontSize(9);
-            doc.setTextColor('#666');
-            doc.text(`Kategori: ${item.kategori_entitas || '-'}`, 30, yPos + 6);
-            doc.text(`Bentuk: ${item.bentuk_entitas || '-'}`, 30, yPos + 12);
-            doc.text(`Status: ${item.status || '-'}`, 30, yPos + 18);
-            doc.text(`Pengiriman: ${item.pengiriman || '-'}`, 30, yPos + 24);
-            if (item.status && item.status.toLowerCase() === 'terkendala') {
-                doc.setTextColor('#ef4444');
-                doc.text(`⚠️ Kendala: ${item.catatan || '-'}`, 30, yPos + 30);
-                doc.setTextColor('#666');
-                yPos += 6;
-            }
-            
-            doc.setFillColor(statusColor);
-            doc.rect(10, yPos - 2, 2, 28, 'F');
-            
-            yPos += 34;
+        const tableData = allData.map((item, index) => {
+            const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+            return [
+                index + 1,
+                item.nama_badan_hukum || '-',
+                item.kategori_entitas || '-',
+                item.bentuk_entitas || '-',
+                item.status || '-',
+                item.kirim_notaris ? formatDate(item.kirim_notaris) : '-',
+                item.terima_minuta ? formatDate(item.terima_minuta) : '-',
+                item.jadwal_ttd ? formatDate(item.jadwal_ttd) : '-',
+                item.tgl_sk_setuju ? formatDate(item.tgl_sk_setuju) : '-',
+                stempelDisplay,
+                item.pengiriman || '-',
+                item.catatan || '-'
+            ];
         });
         
-        doc.save('Laporan_Monitoring_Progress_SIMPELBIZ.pdf');
+        doc.autoTable({
+            head: [['#', 'Nama', 'Kategori', 'Bentuk', 'Status', 'Kirim Notaris', 'Terima Minuta', 'Jadwal TTD', 'SK Setuju', 'Stempel', 'Pengiriman', 'Kendala']],
+            body: tableData,
+            startY: 40,
+            styles: { fontSize: 7 },
+            headStyles: { fillColor: '#6C63FF', textColor: '#fff' },
+            alternateRowStyles: { fillColor: '#F0F2F8' },
+            columnStyles: {
+                11: { cellWidth: 30, fontSize: 6 }
+            }
+        });
+        
+        doc.save('Laporan_Monitoring_SIMPELBIZ.pdf');
         Swal.fire({ icon: 'success', title: '✅ PDF Berhasil Diekspor!', timer: 1500, showConfirmButton: false });
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Gagal Export PDF!', text: err.message });
@@ -1380,11 +1566,12 @@ function exportKategoriPDF() {
                     doc.addPage();
                     yPos = 20;
                 }
+                const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
                 doc.setFontSize(9);
                 doc.setTextColor('#1A1A2E');
                 doc.text(`  ${idx + 1}. ${item.nama_badan_hukum || '-'}`, 18, yPos);
                 doc.setTextColor('#666');
-                doc.text(`  Status: ${item.status || '-'} | Pengiriman: ${item.pengiriman || '-'}`, 22, yPos + 5);
+                doc.text(`  Status: ${item.status || '-'} | Stempel: ${stempelDisplay} | Pengiriman: ${item.pengiriman || '-'}`, 22, yPos + 5);
                 yPos += 12;
             });
             
@@ -1419,6 +1606,7 @@ function exportExecutivePDF() {
         const selesai = allData.filter(d => d.status && (d.status.toLowerCase() === 'selesai' || d.status.toLowerCase() === 'seleksi')).length;
         const proses = allData.filter(d => d.status && d.status.toLowerCase() === 'proses').length;
         const terkendala = allData.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
+        const legalitas = allData.filter(d => d.tgl_sk_setuju || d.tgl_sk).length;
         
         doc.setFontSize(12);
         doc.setTextColor('#1A1A2E');
@@ -1430,6 +1618,7 @@ function exportExecutivePDF() {
             ['Selesai / Seleksi', selesai],
             ['Dalam Proses', proses],
             ['Terkendala', terkendala],
+            ['Legalitas Selesai', legalitas],
             ['Persentase Selesai', total > 0 ? Math.round((selesai / total) * 100) + '%' : '0%']
         ];
         
@@ -1458,12 +1647,13 @@ function exportExecutivePDF() {
             doc.setFontSize(9);
             const statusIcon = item.status && item.status.toLowerCase() === 'selesai' ? '✅' :
                               item.status && item.status.toLowerCase() === 'terkendala' ? '⚠️' : '🔄';
+            const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
             doc.text(`${statusIcon} ${idx + 1}. ${item.nama_badan_hukum || '-'}`, 20, yPos);
             doc.setTextColor('#666');
-            doc.text(`  Status: ${item.status || '-'} | ${item.kategori_entitas || '-'}`, 22, yPos + 4);
-            if (item.status && item.status.toLowerCase() === 'terkendala') {
+            doc.text(`  Status: ${item.status || '-'} | ${item.kategori_entitas || '-'} | Stempel: ${stempelDisplay}`, 22, yPos + 4);
+            if (isDataTerkendala(item)) {
                 doc.setTextColor('#ef4444');
-                doc.text(`  ⚠️ Kendala: ${item.catatan || '-'}`, 22, yPos + 8);
+                doc.text(`  ⚠️ Kendala: ${getCatatanKendala(item) || '-'}`, 22, yPos + 8);
                 yPos += 4;
             }
             doc.setTextColor('#1A1A2E');
@@ -1475,7 +1665,7 @@ function exportExecutivePDF() {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor('#999');
-            doc.text(`© ${new Date().getFullYear()} Penerbit Aditya Rizki Ramadhan - Software Engineer`, 14, doc.internal.pageSize.height - 10);
+            doc.text(`© ${new Date().getFullYear()} Penerbit Aditya Rizki Ramadhan S.Kom - All Rights Reserved`, 14, doc.internal.pageSize.height - 10);
             doc.text(`Halaman ${i} dari ${pageCount}`, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
         }
         
@@ -1519,10 +1709,12 @@ window.navigateToPage = navigateToPage;
 window.openAddModal = openAddModal;
 window.editData = editData;
 window.deleteData = deleteData;
+window.editPengiriman = editPengiriman;
+window.deletePengiriman = deletePengiriman;
 window.refreshData = refreshData;
 window.exportAllPDF = exportAllPDF;
+window.exportLegalitasPDF = exportLegalitasPDF;
 window.exportDashboardPDF = exportDashboardPDF;
-window.exportFilteredPDF = exportFilteredPDF;
 window.exportMonitoringPDF = exportMonitoringPDF;
 window.exportKategoriPDF = exportKategoriPDF;
 window.exportExecutivePDF = exportExecutivePDF;
