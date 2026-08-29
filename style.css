@@ -2549,3 +2549,7 @@ body.dark-mode .btn-outline:hover {
         font-size: 10px;
     }
 }
+/* RUPS Icon */
+.nav-item[data-category="RUPS"] .nav-icon i {
+    color: #8B5CF6;
+}

@@ -80,7 +80,11 @@
                     <span class="nav-label">Dashboard</span>
                     <span class="nav-badge live">Live</span>
                 </button>
-
+<!-- Monitoring RUPS -->
+<button class="nav-item" data-category="RUPS" data-page="monitoring">
+    <span class="nav-icon"><i class="fas fa-users"></i></span>
+    <span class="nav-label">RUPS</span>
+</button>
                 <!-- Data Berkas -->
                 <button class="nav-item" data-page="berkas">
                     <span class="nav-icon"><i class="fas fa-folder-open"></i></span>
@@ -350,12 +354,13 @@
                             <div class="filter-item">
                                 <i class="fas fa-tag"></i>
                                 <select id="filterKategori">
-                                    <option value="">Semua Kategori</option>
-                                    <option value="Pendirian Baru">Pendirian Baru</option>
-                                    <option value="Perubahan">Perubahan</option>
-                                    <option value="Pembubaran">Pembubaran</option>
-                                    <option value="Lainnya">Lainnya</option>
-                                </select>
+    <option value="">Semua Kategori</option>
+    <option value="Pendirian Baru">Pendirian Baru</option>
+    <option value="Perubahan">Perubahan</option>
+    <option value="Pembubaran">Pembubaran</option>
+    <option value="RUPS">RUPS</option>
+    <option value="Lainnya">Lainnya</option>
+</select>
                             </div>
                             <div class="filter-item">
                                 <i class="fas fa-flag"></i>
@@ -420,13 +425,14 @@
                         </div>
                         <div class="filter-item">
                             <i class="fas fa-tag"></i>
-                            <select id="filterMonitoringKategori">
-                                <option value="">Semua Kategori</option>
-                                <option value="Pendirian Baru">Pendirian Baru</option>
-                                <option value="Perubahan">Perubahan</option>
-                                <option value="Pembubaran">Pembubaran</option>
-                                <option value="Lainnya">Lainnya</option>
-                            </select>
+                           <select id="filterMonitoringKategori">
+    <option value="">Semua Kategori</option>
+    <option value="Pendirian Baru">Pendirian Baru</option>
+    <option value="Perubahan">Perubahan</option>
+    <option value="Pembubaran">Pembubaran</option>
+    <option value="RUPS">RUPS</option>
+    <option value="Lainnya">Lainnya</option>
+</select>
                         </div>
                         <div class="filter-item">
                             <i class="fas fa-flag"></i>
@@ -516,11 +522,12 @@
                             <div class="filter-item">
                                 <i class="fas fa-tag"></i>
                                 <select id="filterLegalitasKategori">
-                                    <option value="">Semua Kategori</option>
-                                    <option value="Pendirian Baru">Pendirian Baru</option>
-                                    <option value="Perubahan">Perubahan</option>
-                                    <option value="Pembubaran">Pembubaran</option>
-                                </select>
+    <option value="">Semua Kategori</option>
+    <option value="Pendirian Baru">Pendirian Baru</option>
+    <option value="Perubahan">Perubahan</option>
+    <option value="Pembubaran">Pembubaran</option>
+    <option value="RUPS">RUPS</option>
+</select>
                             </div>
                         </div>
 
@@ -777,19 +784,20 @@
                     </div>
 
                     <!-- Kategori Layanan -->
-                    <div class="form-field">
-                        <label><i class="fas fa-tag"></i> Kategori Layanan *</label>
-                        <div class="input-with-icon">
-                            <select id="kategori" required>
-                                <option value="">Pilih Kategori</option>
-                                <option value="Pendirian Baru">🚀 Pendirian Baru</option>
-                                <option value="Perubahan">🔄 Perubahan</option>
-                                <option value="Pembubaran">📉 Pembubaran</option>
-                                <option value="Lainnya">📌 Lainnya</option>
-                            </select>
-                            <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
-                        </div>
-                    </div>
+<div class="form-field">
+    <label><i class="fas fa-tag"></i> Kategori Layanan *</label>
+    <div class="input-with-icon">
+        <select id="kategori" required>
+            <option value="">Pilih Kategori</option>
+            <option value="Pendirian Baru">🚀 Pendirian Baru</option>
+            <option value="Perubahan">🔄 Perubahan</option>
+            <option value="Pembubaran">📉 Pembubaran</option>
+            <option value="RUPS">📋 RUPS (Rapat Umum Pemegang Saham)</option>
+            <option value="Lainnya">📌 Lainnya</option>
+        </select>
+        <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
+    </div>
+</div>
 
                     <!-- Bentuk Entitas -->
                     <div class="form-field">
@@ -972,19 +980,20 @@
                     </div>
 
                     <!-- Kategori -->
-                    <div class="form-field">
-                        <label><i class="fas fa-tag"></i> Kategori *</label>
-                        <div class="input-with-icon">
-                            <select id="pKategori" required>
-                                <option value="">Pilih Kategori</option>
-                                <option value="Pendirian Baru">Pendirian Baru</option>
-                                <option value="Perubahan">Perubahan</option>
-                                <option value="Pembubaran">Pembubaran</option>
-                                <option value="Lainnya">Lainnya</option>
-                            </select>
-                            <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
-                        </div>
-                    </div>
+<div class="form-field">
+    <label><i class="fas fa-tag"></i> Kategori *</label>
+    <div class="input-with-icon">
+        <select id="pKategori" required>
+            <option value="">Pilih Kategori</option>
+            <option value="Pendirian Baru">🚀 Pendirian Baru</option>
+            <option value="Perubahan">🔄 Perubahan</option>
+            <option value="Pembubaran">📉 Pembubaran</option>
+            <option value="RUPS">📋 RUPS (Rapat Umum Pemegang Saham)</option>
+            <option value="Lainnya">📌 Lainnya</option>
+        </select>
+        <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
+    </div>
+</div>
 
                     <!-- Metode Pengiriman -->
                     <div class="form-field">
