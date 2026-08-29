@@ -1,5 +1,5 @@
 // ============================================================
-// SIMPELBIZ - APPLICATION (FULL FITUR DENGAN KENDALA)
+// SIMPELBIZ - APPLICATION (FULL FITUR DENGAN SUPABASE)
 // ============================================================
 
 let allData = [];
@@ -28,12 +28,9 @@ const pengirimanForm = document.getElementById("pengirimanForm");
 // ============================================================
 
 function isDataTerkendala(item) {
-    // Cek dari status
     const statusTerkendala = item.status && item.status.toLowerCase() === "terkendala";
-    // Cek dari catatan
     const hasCatatan = (item.catatan && item.catatan.length > 0) || 
                        (item.catatan_kendala && item.catatan_kendala.length > 0);
-    
     return statusTerkendala || hasCatatan;
 }
 
@@ -49,7 +46,6 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log("🚀 SIMPELBIZ started");
     showLogin();
     
-    // Event listener untuk kategori - hide/show stempel
     document.getElementById("kategori").addEventListener("change", function() {
         const stempelField = document.getElementById("stempelField");
         if (this.value === "Perubahan" || this.value === "Pembubaran") {
@@ -146,29 +142,83 @@ async function loadData() {
         allData = [];
     }
 
-    loadPengirimanLocal();
+    await loadPengiriman();
     renderAll();
 }
 
 // ============================================================
-// PENGIRIMAN - LOCAL STORAGE
+// PENGIRIMAN - SUPABASE CRUD
 // ============================================================
 
-function loadPengirimanLocal() {
-    const saved = localStorage.getItem("simpelbiz_pengiriman");
-    if (saved) {
-        try {
-            allPengiriman = JSON.parse(saved);
-        } catch {
+async function loadPengiriman() {
+    try {
+        const { data, error } = await supabaseClient
+            .from(TABLE_PENGIRIMAN)
+            .select("*")
+            .order("id", { ascending: false });
+
+        if (error) {
+            console.error("❌ Error load pengiriman:", error);
+            allPengiriman = [];
+        } else if (data && data.length > 0) {
+            console.log("✅ Data pengiriman dari Supabase:", data.length, "data");
+            allPengiriman = data;
+        } else {
             allPengiriman = [];
         }
-    } else {
+    } catch (error) {
+        console.error("❌ Error:", error);
         allPengiriman = [];
     }
 }
 
-function savePengirimanLocal() {
-    localStorage.setItem("simpelbiz_pengiriman", JSON.stringify(allPengiriman));
+async function savePengiriman(payload) {
+    try {
+        const { data, error } = await supabaseClient
+            .from(TABLE_PENGIRIMAN)
+            .insert([payload])
+            .select();
+
+        if (error) throw error;
+        console.log("✅ Pengiriman tersimpan di Supabase:", data);
+        return data[0];
+    } catch (error) {
+        console.error("❌ Error save pengiriman:", error);
+        throw error;
+    }
+}
+
+async function updatePengiriman(id, payload) {
+    try {
+        const { data, error } = await supabaseClient
+            .from(TABLE_PENGIRIMAN)
+            .update(payload)
+            .eq("id", id)
+            .select();
+
+        if (error) throw error;
+        console.log("✅ Pengiriman diupdate di Supabase:", data);
+        return data[0];
+    } catch (error) {
+        console.error("❌ Error update pengiriman:", error);
+        throw error;
+    }
+}
+
+async function deletePengirimanFromSupabase(id) {
+    try {
+        const { error } = await supabaseClient
+            .from(TABLE_PENGIRIMAN)
+            .delete()
+            .eq("id", id);
+
+        if (error) throw error;
+        console.log("✅ Pengiriman dihapus dari Supabase");
+        return true;
+    } catch (error) {
+        console.error("❌ Error delete pengiriman:", error);
+        throw error;
+    }
 }
 
 // ============================================================
@@ -237,7 +287,7 @@ function chartRow(label, count, total) {
 }
 
 // ============================================================
-// RENDER RECENT TABLE - DENGAN DETEKSI KENDALA
+// RENDER RECENT TABLE
 // ============================================================
 
 function renderRecentTable() {
@@ -253,7 +303,6 @@ function renderRecentTable() {
 
     table.innerHTML = recent.map(item => {
         const isTerkendala = isDataTerkendala(item);
-        
         let statusBadgeHtml;
         if (isTerkendala) {
             statusBadgeHtml = `
@@ -282,7 +331,7 @@ function renderRecentTable() {
 }
 
 // ============================================================
-// RENDER BERKAS TABLE - DENGAN DETEKSI KENDALA
+// RENDER BERKAS TABLE
 // ============================================================
 
 function renderBerkasTable(data) {
@@ -387,7 +436,7 @@ function renderLegalitasTable(data) {
 }
 
 // ============================================================
-// RENDER STEMPEL TABLE - DENGAN DETEKSI KENDALA
+// RENDER STEMPEL TABLE
 // ============================================================
 
 function renderStempelTable(data) {
@@ -458,7 +507,7 @@ function renderPengirimanTable(data) {
             <td>${escapeHTML(item.no_resi || "-")}</td>
             <td>${item.tanggal_kirim ? formatDate(item.tanggal_kirim) : '-'}</td>
             <td>${escapeHTML(item.keterangan || "-")}</td>
-            <td>${escapeHTML(item.status || "Belum Dikirim")}</td>
+            <td><span class="status-badge ${item.status === 'Dikirim' ? 'selesai' : 'proses'}">${escapeHTML(item.status || "Belum Dikirim")}</span></td>
             <td>
                 <button class="btn-outline btn-sm" onclick="editPengiriman(${item.id})"><i class="fas fa-edit"></i></button>
                 <button class="btn-danger btn-sm" onclick="deletePengiriman(${item.id})"><i class="fas fa-trash"></i></button>
@@ -540,7 +589,7 @@ function getProgressSteps(item) {
 }
 
 // ============================================================
-// RENDER MONITORING TABLE - DENGAN DETEKSI KENDALA OTOMATIS
+// RENDER MONITORING TABLE
 // ============================================================
 
 function renderMonitoringTable(data) {
@@ -1225,7 +1274,7 @@ document.getElementById('dashboardToBerkas').addEventListener('click', function(
 });
 
 // ============================================================
-// PENGIRIMAN CRUD
+// PENGIRIMAN CRUD - SUPABASE
 // ============================================================
 
 document.getElementById('tambahPengirimanBtn').addEventListener('click', function() {
@@ -1269,7 +1318,7 @@ window.editPengiriman = function(id) {
     document.getElementById('pengirimanModal').classList.remove('hidden');
 };
 
-pengirimanForm.addEventListener('submit', function(e) {
+pengirimanForm.addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const button = document.getElementById('savePengirimanBtn');
@@ -1295,33 +1344,36 @@ pengirimanForm.addEventListener('submit', function(e) {
         return;
     }
 
-    if (editingPengirimanId) {
-        const index = allPengiriman.findIndex(x => x.id === editingPengirimanId);
-        if (index !== -1) {
-            allPengiriman[index] = { ...allPengiriman[index], ...payload };
+    try {
+        if (editingPengirimanId) {
+            await updatePengiriman(editingPengirimanId, payload);
+            Swal.fire({
+                icon: 'success',
+                title: '✅ Pengiriman diperbarui!',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        } else {
+            await savePengiriman(payload);
+            Swal.fire({
+                icon: 'success',
+                title: '✅ Pengiriman ditambahkan!',
+                timer: 1500,
+                showConfirmButton: false
+            });
         }
-    } else {
-        const newId = allPengiriman.length > 0 ? Math.max(...allPengiriman.map(x => x.id)) + 1 : 1;
-        allPengiriman.unshift({ id: newId, ...payload });
+        await loadPengiriman();
+        document.getElementById('pengirimanModal').classList.add('hidden');
+        editingPengirimanId = null;
+    } catch (error) {
+        errorEl.textContent = '❌ ' + error.message;
+    } finally {
+        button.disabled = false;
+        button.innerHTML = editingPengirimanId ? '<i class="fas fa-save"></i> Update Pengiriman' : '<i class="fas fa-save"></i> Simpan Pengiriman';
     }
-
-    savePengirimanLocal();
-    renderPengirimanTable(filterPengiriman());
-    document.getElementById('pengirimanModal').classList.add('hidden');
-    button.disabled = false;
-    button.innerHTML = editingPengirimanId ? '<i class="fas fa-save"></i> Update Pengiriman' : '<i class="fas fa-save"></i> Simpan Pengiriman';
-    
-    Swal.fire({
-        icon: 'success',
-        title: editingPengirimanId ? '✅ Pengiriman diperbarui!' : '✅ Pengiriman ditambahkan!',
-        timer: 1500,
-        showConfirmButton: false
-    });
-    
-    editingPengirimanId = null;
 });
 
-window.deletePengiriman = function(id) {
+window.deletePengiriman = async function(id) {
     const item = allPengiriman.find(x => x.id === id);
     if (!item) return;
     
@@ -1334,12 +1386,15 @@ window.deletePengiriman = function(id) {
         cancelButtonColor: '#6C63FF',
         confirmButtonText: 'Ya, Hapus!',
         cancelButtonText: 'Batal'
-    }).then((result) => {
+    }).then(async (result) => {
         if (result.isConfirmed) {
-            allPengiriman = allPengiriman.filter(x => x.id !== id);
-            savePengirimanLocal();
-            renderPengirimanTable(filterPengiriman());
-            Swal.fire({ icon: 'success', title: '✅ Pengiriman dihapus!', timer: 1500, showConfirmButton: false });
+            try {
+                await deletePengirimanFromSupabase(id);
+                await loadPengiriman();
+                Swal.fire({ icon: 'success', title: '✅ Pengiriman dihapus!', timer: 1500, showConfirmButton: false });
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Gagal hapus!', text: error.message });
+            }
         }
     });
 };
@@ -1536,7 +1591,7 @@ function exportKategoriPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         
-        const categories = ['Pendirian Baru', 'Perubahan', 'Pembubaran', 'Lainnya'];
+        const categories = ['Pendirian Baru', 'Perubahan', 'Pembubaran', 'RUPS', 'Lainnya'];
         let yPos = 45;
         
         doc.setFontSize(18);
