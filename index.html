@@ -46,9 +46,7 @@
                 <span class="login-hint">🔑 Default: admin@simpelbiz.id / admin123</span>
             </div>
 
-            <!-- =============================================
-                 FOOTER LOGIN - TAMBAHKAN INI
-            ============================================= -->
+            <!-- FOOTER LOGIN -->
             <div class="login-footer-bottom">
                 <p>© 2026 Penerbit Aditya Rizki Ramadhan S.Kom - All Rights Reserved</p>
             </div>
@@ -56,7 +54,9 @@
     </div>
 </div>
 
-    <!-- MAIN APP -->
+    <!-- =========================================================
+         MAIN APP
+    ========================================================= -->
     <div id="appPage" class="app hidden">
 
         <!-- SIDEBAR -->
@@ -123,6 +123,12 @@
                 <button class="nav-item" data-category="Lainnya" data-page="monitoring">
                     <span class="nav-icon"><i class="fas fa-ellipsis-h"></i></span>
                     <span class="nav-label">Lainnya</span>
+                </button>
+
+                <!-- Monitoring RUPS -->
+                <button class="nav-item" data-category="RUPS" data-page="monitoring">
+                    <span class="nav-icon"><i class="fas fa-users"></i></span>
+                    <span class="nav-label">RUPS</span>
                 </button>
 
                 <div class="nav-section">📋 LEGALITAS</div>
@@ -212,7 +218,6 @@
                      DASHBOARD PAGE
                 ============================================= -->
                 <div id="dashboardPage" class="page active">
-                    <!-- ... (sama seperti sebelumnya) ... -->
                     <div class="page-header">
                         <div>
                             <h1><i class="fas fa-chart-line"></i> Dashboard Monitoring</h1>
@@ -283,7 +288,7 @@
 
                         <div class="chart-panel">
                             <div class="panel-header">
-                                <h3><i class="fas fa-pie-chart"></i> Metode Pengambilan</h3>
+                                <h3><i class="fas fa-truck"></i> Data Pengiriman</h3>
                                 <span class="panel-badge">Distribusi</span>
                             </div>
                             <div class="method-grid">
@@ -329,7 +334,6 @@
                      DATA BERKAS PAGE
                 ============================================= -->
                 <div id="berkasPage" class="page hidden">
-                    <!-- ... (sama seperti sebelumnya) ... -->
                     <div class="page-header">
                         <div>
                             <h1><i class="fas fa-folder-open"></i> Data Berkas</h1>
@@ -349,13 +353,13 @@
                             <div class="filter-item">
                                 <i class="fas fa-tag"></i>
                                 <select id="filterKategori">
-    <option value="">Semua Kategori</option>
-    <option value="Pendirian Baru">Pendirian Baru</option>
-    <option value="Perubahan">Perubahan</option>
-    <option value="Pembubaran">Pembubaran</option>
-    <option value="RUPS">RUPS</option>
-    <option value="Lainnya">Lainnya</option>
-</select>
+                                    <option value="">Semua Kategori</option>
+                                    <option value="Pendirian Baru">Pendirian Baru</option>
+                                    <option value="Perubahan">Perubahan</option>
+                                    <option value="Pembubaran">Pembubaran</option>
+                                    <option value="RUPS">RUPS</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
                             </div>
                             <div class="filter-item">
                                 <i class="fas fa-flag"></i>
@@ -396,7 +400,6 @@
                      MONITORING PAGE
                 ============================================= -->
                 <div id="monitoringPage" class="page hidden">
-                    <!-- ... (sama seperti sebelumnya) ... -->
                     <div class="page-header">
                         <div>
                             <h1><i class="fas fa-chart-simple"></i> Monitoring Semua Berkas</h1>
@@ -420,14 +423,14 @@
                         </div>
                         <div class="filter-item">
                             <i class="fas fa-tag"></i>
-                           <select id="filterMonitoringKategori">
-    <option value="">Semua Kategori</option>
-    <option value="Pendirian Baru">Pendirian Baru</option>
-    <option value="Perubahan">Perubahan</option>
-    <option value="Pembubaran">Pembubaran</option>
-    <option value="RUPS">RUPS</option>
-    <option value="Lainnya">Lainnya</option>
-</select>
+                            <select id="filterMonitoringKategori">
+                                <option value="">Semua Kategori</option>
+                                <option value="Pendirian Baru">Pendirian Baru</option>
+                                <option value="Perubahan">Perubahan</option>
+                                <option value="Pembubaran">Pembubaran</option>
+                                <option value="RUPS">RUPS</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
                         </div>
                         <div class="filter-item">
                             <i class="fas fa-flag"></i>
@@ -517,12 +520,12 @@
                             <div class="filter-item">
                                 <i class="fas fa-tag"></i>
                                 <select id="filterLegalitasKategori">
-    <option value="">Semua Kategori</option>
-    <option value="Pendirian Baru">Pendirian Baru</option>
-    <option value="Perubahan">Perubahan</option>
-    <option value="Pembubaran">Pembubaran</option>
-    <option value="RUPS">RUPS</option>
-</select>
+                                    <option value="">Semua Kategori</option>
+                                    <option value="Pendirian Baru">Pendirian Baru</option>
+                                    <option value="Perubahan">Perubahan</option>
+                                    <option value="Pembubaran">Pembubaran</option>
+                                    <option value="RUPS">RUPS</option>
+                                </select>
                             </div>
                         </div>
 
@@ -568,10 +571,9 @@
                                 <i class="fas fa-stamp"></i>
                                 <select id="filterStempel">
                                     <option value="">Semua</option>
-                                    <option value="Dipesan lewat SIMPELBIZ">Dipesan lewat SIMPELBIZ</option>
-                                    <option value="Dipesan Client">Dipesan Client</option>
-                                    <option value="Belum Dipesan">Belum Dipesan</option>
-                                    <option value="Tidak Perlu">Tidak Perlu (Perubahan)</option>
+                                    <option value="Dari Simpelbiz Stempel">Dari Simpelbiz Stempel</option>
+                                    <option value="Dari Client Stempel">Dari Client Stempel</option>
+                                    <option value="Tidak Perlu Stempel">Tidak Perlu Stempel</option>
                                 </select>
                             </div>
                         </div>
@@ -645,6 +647,8 @@
                                 <tbody id="pengirimanTable"></tbody>
                             </table>
                         </div>
+                        <!-- Pagination Pengiriman -->
+                        <div id="pengirimanPaginationContainer" class="pagination-container"></div>
                     </div>
                 </div>
 
@@ -735,7 +739,6 @@
          MODAL - TAMBAH/EDIT BERKAS
     ========================================================= -->
     <div id="berkasModal" class="modal-overlay hidden">
-        <!-- ... (sama seperti sebelumnya) ... -->
         <div class="modal-container">
             <div class="modal-header-gradient">
                 <div>
@@ -779,20 +782,20 @@
                     </div>
 
                     <!-- Kategori Layanan -->
-<div class="form-field">
-    <label><i class="fas fa-tag"></i> Kategori Layanan *</label>
-    <div class="input-with-icon">
-        <select id="kategori" required>
-            <option value="">Pilih Kategori</option>
-            <option value="Pendirian Baru">🚀 Pendirian Baru</option>
-            <option value="Perubahan">🔄 Perubahan</option>
-            <option value="Pembubaran">📉 Pembubaran</option>
-            <option value="RUPS">📋 RUPS (Rapat Umum Pemegang Saham)</option>
-            <option value="Lainnya">📌 Lainnya</option>
-        </select>
-        <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
-    </div>
-</div>
+                    <div class="form-field">
+                        <label><i class="fas fa-tag"></i> Kategori Layanan *</label>
+                        <div class="input-with-icon">
+                            <select id="kategori" required>
+                                <option value="">Pilih Kategori</option>
+                                <option value="Pendirian Baru">🚀 Pendirian Baru</option>
+                                <option value="Perubahan">🔄 Perubahan</option>
+                                <option value="Pembubaran">📉 Pembubaran</option>
+                                <option value="RUPS">📋 RUPS (Rapat Umum Pemegang Saham)</option>
+                                <option value="Lainnya">📌 Lainnya</option>
+                            </select>
+                            <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                    </div>
 
                     <!-- Bentuk Entitas -->
                     <div class="form-field">
@@ -815,13 +818,13 @@
                         <label><i class="fas fa-stamp"></i> Pesan Stempel Perusahaan</label>
                         <div class="input-with-icon">
                             <select id="pesanStempel">
-                                <option value="Dipesan lewat SIMPELBIZ">✅ Dipesan lewat SIMPELBIZ</option>
-                                <option value="Dipesan Client">👤 Dipesan Client</option>
-                                <option value="Belum Dipesan">⏳ Belum Dipesan</option>
+                                <option value="Dari Simpelbiz Stempel">✅ Dari Simpelbiz Stempel</option>
+                                <option value="Dari Client Stempel">👤 Dari Client Stempel</option>
+                                <option value="Tidak Perlu Stempel">⏳ Tidak Perlu Stempel</option>
                             </select>
                             <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
                         </div>
-                        <small><i class="fas fa-info-circle"></i> Stempel hanya untuk layanan Pendirian. Perubahan otomatis "Tidak Perlu".</small>
+                        <small><i class="fas fa-info-circle"></i> Pilih status pemesanan stempel perusahaan.</small>
                     </div>
 
                     <!-- Status Pengerjaan -->
@@ -975,20 +978,20 @@
                     </div>
 
                     <!-- Kategori -->
-<div class="form-field">
-    <label><i class="fas fa-tag"></i> Kategori *</label>
-    <div class="input-with-icon">
-        <select id="pKategori" required>
-            <option value="">Pilih Kategori</option>
-            <option value="Pendirian Baru">🚀 Pendirian Baru</option>
-            <option value="Perubahan">🔄 Perubahan</option>
-            <option value="Pembubaran">📉 Pembubaran</option>
-            <option value="RUPS">📋 RUPS (Rapat Umum Pemegang Saham)</option>
-            <option value="Lainnya">📌 Lainnya</option>
-        </select>
-        <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
-    </div>
-</div>
+                    <div class="form-field">
+                        <label><i class="fas fa-tag"></i> Kategori *</label>
+                        <div class="input-with-icon">
+                            <select id="pKategori" required>
+                                <option value="">Pilih Kategori</option>
+                                <option value="Pendirian Baru">🚀 Pendirian Baru</option>
+                                <option value="Perubahan">🔄 Perubahan</option>
+                                <option value="Pembubaran">📉 Pembubaran</option>
+                                <option value="RUPS">📋 RUPS (Rapat Umum Pemegang Saham)</option>
+                                <option value="Lainnya">📌 Lainnya</option>
+                            </select>
+                            <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                    </div>
 
                     <!-- Metode Pengiriman -->
                     <div class="form-field">

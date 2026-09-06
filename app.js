@@ -7,8 +7,11 @@ let allPengiriman = [];
 let editingId = null;
 let editingPengirimanId = null;
 let currentPage = 1;
+let currentPengirimanPage = 1;
 const itemsPerPage = 10;
+const itemsPerPagePengiriman = 20;
 let filteredMonitoringData = [];
+let filteredPengirimanData = [];
 
 // ============================================================
 // ELEMENTS
@@ -50,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const stempelField = document.getElementById("stempelField");
         if (this.value === "Perubahan" || this.value === "Pembubaran") {
             stempelField.style.display = "none";
-            document.getElementById("pesanStempel").value = "Tidak Perlu";
+            document.getElementById("pesanStempel").value = "Tidak Perlu Stempel";
         } else {
             stempelField.style.display = "block";
         }
@@ -234,6 +237,7 @@ function renderAll() {
     renderMonitoringTable(allData);
     renderLegalitasTable(allData);
     renderStempelTable(allData);
+    currentPengirimanPage = 1;
     renderPengirimanTable(allPengiriman);
 }
 
@@ -260,10 +264,16 @@ function renderDashboard() {
     const legalitasCount = allData.filter(x => x.tgl_sk_setuju || x.tgl_sk).length;
     document.getElementById("legalitasCount").textContent = legalitasCount;
 
-    document.getElementById("jneCount").textContent = allData.filter(x => x.pengiriman === "JNE").length;
-    document.getElementById("gosendCount").textContent = allData.filter(x => x.pengiriman === "GoSend").length;
-    document.getElementById("clientCount").textContent = allData.filter(x => x.pengiriman === "Diambil Client").length;
-    document.getElementById("belumKirimCount").textContent = allData.filter(x => x.pengiriman === "Belum Dikirim").length;
+    // Data Pengiriman dari tabel pengiriman
+    const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
+    const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
+    const client = allPengiriman.filter(x => x.metode_pengiriman === "Diambil Client").length;
+    const belum = allPengiriman.filter(x => x.metode_pengiriman === "Belum Dikirim" || x.status === "Belum Dikirim").length;
+
+    document.getElementById("jneCount").textContent = jne;
+    document.getElementById("gosendCount").textContent = gosend;
+    document.getElementById("clientCount").textContent = client;
+    document.getElementById("belumKirimCount").textContent = belum;
 
     const totalStatus = Math.max(selesai + seleksi + proses + terkendala + menunggu, 1);
     document.getElementById("statusChart").innerHTML = `
@@ -346,7 +356,11 @@ function renderBerkasTable(data) {
 
     table.innerHTML = data.map((item, index) => {
         const isTerkendala = isDataTerkendala(item);
-        const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+        let stempelDisplay = item.pesan_stempel || "-";
+        // Jika kategori Perubahan atau Pembubaran, stempel otomatis "Tidak Perlu Stempel"
+        if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+            stempelDisplay = "Tidak Perlu Stempel";
+        }
         const catatan = getCatatanKendala(item);
         
         let statusBadgeHtml;
@@ -403,7 +417,10 @@ function renderLegalitasTable(data) {
 
     table.innerHTML = legalitasData.map((item, index) => {
         const isTerkendala = isDataTerkendala(item);
-        const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+        let stempelDisplay = item.pesan_stempel || "-";
+        if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+            stempelDisplay = "Tidak Perlu Stempel";
+        }
         const skDate = item.tgl_sk_setuju || item.tgl_sk;
         
         let statusBadgeHtml;
@@ -454,6 +471,7 @@ function renderStempelTable(data) {
     table.innerHTML = stempelData.map((item, index) => {
         const isTerkendala = isDataTerkendala(item);
         const catatan = getCatatanKendala(item);
+        let stempelDisplay = item.pesan_stempel || "-";
         
         let statusBadgeHtml;
         if (isTerkendala) {
@@ -471,7 +489,7 @@ function renderStempelTable(data) {
                 <td>${index + 1}</td>
                 <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
                 <td>${escapeHTML(item.kategori_entitas || "-")}</td>
-                <td>${escapeHTML(item.pesan_stempel || "-")}</td>
+                <td>${escapeHTML(stempelDisplay)}</td>
                 <td>${statusBadgeHtml}</td>
                 <td>
                     <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
@@ -485,25 +503,39 @@ function renderStempelTable(data) {
 }
 
 // ============================================================
-// RENDER PENGIRIMAN TABLE
+// RENDER PENGIRIMAN TABLE - DENGAN PAGINATION
 // ============================================================
 
 function renderPengirimanTable(data) {
     const table = document.getElementById("pengirimanTable");
+    const countEl = document.getElementById("pengirimanCount");
 
     if (!table) return;
 
-    if (!data || !data.length) {
+    // Filter data pengiriman
+    filteredPengirimanData = filterPengirimanData(data);
+    const totalItems = filteredPengirimanData.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPagePengiriman);
+
+    if (countEl) countEl.textContent = totalItems + " data";
+
+    if (!filteredPengirimanData || !filteredPengirimanData.length) {
         table.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#7b8497;">Tidak ada data pengiriman.</td></tr>`;
+        updatePengirimanPagination(0, 0);
         return;
     }
 
-    table.innerHTML = data.map((item, index) => `
+    if (currentPengirimanPage > totalPages) currentPengirimanPage = totalPages;
+    const startIndex = (currentPengirimanPage - 1) * itemsPerPagePengiriman;
+    const endIndex = Math.min(startIndex + itemsPerPagePengiriman, totalItems);
+    const pageData = filteredPengirimanData.slice(startIndex, endIndex);
+
+    table.innerHTML = pageData.map((item, index) => `
         <tr>
-            <td>${index + 1}</td>
+            <td>${startIndex + index + 1}</td>
             <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
             <td>${escapeHTML(item.kategori || "-")}</td>
-            <td>${escapeHTML(item.metode_pengiriman || "-")}</td>
+            <td><span class="status-badge ${item.metode_pengiriman === 'JNE' ? 'seleksi' : item.metode_pengiriman === 'GoSend' ? 'proses' : ''}">${escapeHTML(item.metode_pengiriman || "-")}</span></td>
             <td>${escapeHTML(item.no_resi || "-")}</td>
             <td>${item.tanggal_kirim ? formatDate(item.tanggal_kirim) : '-'}</td>
             <td>${escapeHTML(item.keterangan || "-")}</td>
@@ -514,6 +546,66 @@ function renderPengirimanTable(data) {
             </td>
         </tr>
     `).join("");
+
+    updatePengirimanPagination(currentPengirimanPage, totalPages);
+}
+
+function filterPengirimanData(data) {
+    const search = document.getElementById("searchPengiriman")?.value?.toLowerCase().trim() || "";
+    const metode = document.getElementById("filterPengiriman")?.value || "";
+
+    return (data || allPengiriman).filter(item => {
+        const text = (item.nama_badan_hukum || "") + " " + (item.metode_pengiriman || "");
+        return (
+            (!search || text.toLowerCase().includes(search)) &&
+            (!metode || item.metode_pengiriman === metode)
+        );
+    });
+}
+
+function updatePengirimanPagination(current, total) {
+    const paginationContainer = document.getElementById('pengirimanPaginationContainer');
+    if (!paginationContainer) return;
+
+    if (total <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    let html = '<div class="pagination-wrapper">';
+    html += `<button class="pagination-btn" onclick="changePengirimanPage(${current - 1})" ${current <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+    
+    let startPage = Math.max(1, current - 2);
+    let endPage = Math.min(total, current + 2);
+    
+    if (startPage > 1) {
+        html += `<button class="pagination-btn" onclick="changePengirimanPage(1)">1</button>`;
+        if (startPage > 2) html += `<span class="pagination-dots">...</span>`;
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="pagination-btn ${i === current ? 'active' : ''}" onclick="changePengirimanPage(${i})">${i}</button>`;
+    }
+    
+    if (endPage < total) {
+        if (endPage < total - 1) html += `<span class="pagination-dots">...</span>`;
+        html += `<button class="pagination-btn" onclick="changePengirimanPage(${total})">${total}</button>`;
+    }
+    
+    html += `<button class="pagination-btn" onclick="changePengirimanPage(${current + 1})" ${current >= total ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+    html += `<span class="pagination-info">Halaman ${current} dari ${total}</span>`;
+    html += '</div>';
+    
+    paginationContainer.innerHTML = html;
+}
+
+function changePengirimanPage(page) {
+    const totalItems = filteredPengirimanData.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPagePengiriman);
+    
+    if (page < 1 || page > totalPages) return;
+    currentPengirimanPage = page;
+    renderPengirimanTable(allPengiriman);
 }
 
 // ============================================================
@@ -619,7 +711,10 @@ function renderMonitoringTable(data) {
         const progressSteps = getProgressSteps(item);
         const isTerkendala = isDataTerkendala(item);
         const catatan = getCatatanKendala(item);
-        const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+        let stempelDisplay = item.pesan_stempel || "-";
+        if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+            stempelDisplay = "Tidak Perlu Stempel";
+        }
         
         let statusBadgeHtml;
         if (isTerkendala) {
@@ -924,25 +1019,14 @@ function filterStempel() {
 // ============================================================
 
 document.getElementById("searchPengiriman").addEventListener("input", function() {
-    renderPengirimanTable(filterPengiriman());
+    currentPengirimanPage = 1;
+    renderPengirimanTable(allPengiriman);
 });
 
 document.getElementById("filterPengiriman").addEventListener("change", function() {
-    renderPengirimanTable(filterPengiriman());
+    currentPengirimanPage = 1;
+    renderPengirimanTable(allPengiriman);
 });
-
-function filterPengiriman() {
-    const search = document.getElementById("searchPengiriman").value.toLowerCase().trim();
-    const metode = document.getElementById("filterPengiriman").value;
-
-    return allPengiriman.filter(item => {
-        const text = (item.nama_badan_hukum || "") + " " + (item.metode_pengiriman || "");
-        return (
-            (!search || text.toLowerCase().includes(search)) &&
-            (!metode || item.metode_pengiriman === metode)
-        );
-    });
-}
 
 // ============================================================
 // NAVIGATION
@@ -998,7 +1082,8 @@ document.querySelectorAll('.nav-item[data-page]').forEach(item => {
         } else if (page === 'stempel') {
             renderStempelTable(filterStempel());
         } else if (page === 'pengiriman') {
-            renderPengirimanTable(filterPengiriman());
+            currentPengirimanPage = 1;
+            renderPengirimanTable(allPengiriman);
         }
     });
 });
@@ -1025,7 +1110,7 @@ function openAddModal() {
     
     document.getElementById('status').value = 'Sedang Dalam Proses';
     document.getElementById('metodePengiriman').value = 'Belum Dikirim';
-    document.getElementById('pesanStempel').value = 'Dipesan lewat SIMPELBIZ';
+    document.getElementById('pesanStempel').value = 'Dari Simpelbiz Stempel';
     document.getElementById('berkasId').value = '';
     
     document.getElementById('stempelField').style.display = 'block';
@@ -1062,13 +1147,15 @@ window.editData = function(id) {
     document.getElementById('kategori').value = item.kategori_entitas || '';
     document.getElementById('bentukEntitas').value = item.bentuk_entitas || '';
     
+    // Handle stempel
+    let stempelValue = item.pesan_stempel || 'Dari Simpelbiz Stempel';
     if (item.kategori_entitas === 'Perubahan' || item.kategori_entitas === 'Pembubaran') {
         document.getElementById('stempelField').style.display = 'none';
-        document.getElementById('pesanStempel').value = 'Tidak Perlu';
+        stempelValue = 'Tidak Perlu Stempel';
     } else {
         document.getElementById('stempelField').style.display = 'block';
-        document.getElementById('pesanStempel').value = item.pesan_stempel || 'Dipesan lewat SIMPELBIZ';
     }
+    document.getElementById('pesanStempel').value = stempelValue;
     
     document.getElementById('status').value = item.status || 'Sedang Dalam Proses';
     document.getElementById('tglDikirimNotaris').value = item.tgl_dikirim_notaris || item.kirim_notaris || '';
@@ -1133,7 +1220,7 @@ berkasForm.addEventListener('submit', async function(e) {
         nama_badan_hukum: document.getElementById('namaBadanHukum').value.trim(),
         kategori_entitas: kategori,
         bentuk_entitas: document.getElementById('bentukEntitas').value,
-        pesan_stempel: isPerubahan ? 'Tidak Perlu' : document.getElementById('pesanStempel').value,
+        pesan_stempel: isPerubahan ? 'Tidak Perlu Stempel' : document.getElementById('pesanStempel').value,
         status: document.getElementById('status').value,
         tgl_dikirim_notaris: document.getElementById('tglDikirimNotaris').value || null,
         jadwal_ttd: document.getElementById('jadwalTTD').value || null,
@@ -1417,7 +1504,10 @@ function exportAllPDF() {
         doc.text(`Total Data: ${allData.length} berkas`, 14, 33);
         
         const tableData = allData.map(item => {
-            const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+            let stempelDisplay = item.pesan_stempel || "-";
+            if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+                stempelDisplay = "Tidak Perlu Stempel";
+            }
             return [
                 item.nama_badan_hukum || '-',
                 item.kategori_entitas || '-',
@@ -1462,7 +1552,10 @@ function exportLegalitasPDF() {
         doc.text(`Total Legalitas Selesai: ${legalitasData.length} berkas`, 14, 40);
         
         const tableData = legalitasData.map((item, index) => {
-            const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+            let stempelDisplay = item.pesan_stempel || "-";
+            if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+                stempelDisplay = "Tidak Perlu Stempel";
+            }
             return [
                 index + 1,
                 item.nama_badan_hukum || '-',
@@ -1514,6 +1607,12 @@ function exportDashboardPDF() {
         const pengiriman = allData.filter(d => d.pengiriman === 'JNE' || d.pengiriman === 'GoSend').length;
         const legalitas = allData.filter(d => d.tgl_sk_setuju || d.tgl_sk).length;
         
+        // Data dari tabel pengiriman
+        const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
+        const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
+        const client = allPengiriman.filter(x => x.metode_pengiriman === "Diambil Client").length;
+        const belum = allPengiriman.filter(x => x.metode_pengiriman === "Belum Dikirim" || x.status === "Belum Dikirim").length;
+        
         doc.autoTable({
             head: [['Statistik', 'Jumlah']],
             body: [
@@ -1522,7 +1621,11 @@ function exportDashboardPDF() {
                 ['Dalam Proses', proses],
                 ['Terkendala', terkendala],
                 ['Dalam Pengiriman', pengiriman],
-                ['Legalitas Selesai', legalitas]
+                ['Legalitas Selesai', legalitas],
+                ['JNE', jne],
+                ['GoSend', gosend],
+                ['Diambil Client', client],
+                ['Belum Dikirim', belum]
             ],
             startY: 40,
             styles: { fontSize: 12 },
@@ -1550,7 +1653,10 @@ function exportMonitoringPDF() {
         doc.text(`Total Berkas: ${allData.length}`, 14, 33);
         
         const tableData = allData.map((item, index) => {
-            const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+            let stempelDisplay = item.pesan_stempel || "-";
+            if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+                stempelDisplay = "Tidak Perlu Stempel";
+            }
             return [
                 index + 1,
                 item.nama_badan_hukum || '-',
@@ -1621,7 +1727,10 @@ function exportKategoriPDF() {
                     doc.addPage();
                     yPos = 20;
                 }
-                const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+                let stempelDisplay = item.pesan_stempel || "-";
+                if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+                    stempelDisplay = "Tidak Perlu Stempel";
+                }
                 doc.setFontSize(9);
                 doc.setTextColor('#1A1A2E');
                 doc.text(`  ${idx + 1}. ${item.nama_badan_hukum || '-'}`, 18, yPos);
@@ -1663,6 +1772,10 @@ function exportExecutivePDF() {
         const terkendala = allData.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
         const legalitas = allData.filter(d => d.tgl_sk_setuju || d.tgl_sk).length;
         
+        // Data pengiriman
+        const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
+        const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
+        
         doc.setFontSize(12);
         doc.setTextColor('#1A1A2E');
         doc.text('📊 STATISTIK', 14, yPos);
@@ -1674,7 +1787,9 @@ function exportExecutivePDF() {
             ['Dalam Proses', proses],
             ['Terkendala', terkendala],
             ['Legalitas Selesai', legalitas],
-            ['Persentase Selesai', total > 0 ? Math.round((selesai / total) * 100) + '%' : '0%']
+            ['Persentase Selesai', total > 0 ? Math.round((selesai / total) * 100) + '%' : '0%'],
+            ['JNE', jne],
+            ['GoSend', gosend]
         ];
         
         stats.forEach(stat => {
@@ -1702,7 +1817,10 @@ function exportExecutivePDF() {
             doc.setFontSize(9);
             const statusIcon = item.status && item.status.toLowerCase() === 'selesai' ? '✅' :
                               item.status && item.status.toLowerCase() === 'terkendala' ? '⚠️' : '🔄';
-            const stempelDisplay = item.kategori_entitas && (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") ? "Tidak Perlu" : (item.pesan_stempel || "-");
+            let stempelDisplay = item.pesan_stempel || "-";
+            if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+                stempelDisplay = "Tidak Perlu Stempel";
+            }
             doc.text(`${statusIcon} ${idx + 1}. ${item.nama_badan_hukum || '-'}`, 20, yPos);
             doc.setTextColor('#666');
             doc.text(`  Status: ${item.status || '-'} | ${item.kategori_entitas || '-'} | Stempel: ${stempelDisplay}`, 22, yPos + 4);
@@ -1775,5 +1893,6 @@ window.exportKategoriPDF = exportKategoriPDF;
 window.exportExecutivePDF = exportExecutivePDF;
 window.showKendala = showKendala;
 window.changePage = changePage;
+window.changePengirimanPage = changePengirimanPage;
 
 console.log("✅ SIMPELBIZ APP READY!");
