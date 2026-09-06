@@ -496,7 +496,7 @@
                 </div>
 
                 <!-- =============================================
-                     LEGALITAS SELESAI PAGE
+                     LEGALITAS SELESAI PAGE - DENGAN OSS
                 ============================================= -->
                 <div id="legalitasPage" class="page hidden">
                     <div class="page-header">
@@ -527,6 +527,14 @@
                                     <option value="RUPS">RUPS</option>
                                 </select>
                             </div>
+                            <div class="filter-item">
+                                <i class="fas fa-check-circle"></i>
+                                <select id="filterLegalitasOSS">
+                                    <option value="">Semua OSS</option>
+                                    <option value="Sudah Selesai">Sudah Selesai</option>
+                                    <option value="Belum Selesai">Belum Selesai</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="table-wrapper">
@@ -540,7 +548,7 @@
                                         <th>Status</th>
                                         <th>SK Setuju</th>
                                         <th>Stempel</th>
-                                        <th>Pengiriman</th>
+                                        <th>OSS</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -813,7 +821,7 @@
                         </div>
                     </div>
 
-                    <!-- Pesan Stempel (Hanya untuk Pendirian) -->
+                    <!-- Pesan Stempel -->
                     <div class="form-field" id="stempelField">
                         <label><i class="fas fa-stamp"></i> Pesan Stempel Perusahaan</label>
                         <div class="input-with-icon">

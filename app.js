@@ -357,7 +357,6 @@ function renderBerkasTable(data) {
     table.innerHTML = data.map((item, index) => {
         const isTerkendala = isDataTerkendala(item);
         let stempelDisplay = item.pesan_stempel || "-";
-        // Jika kategori Perubahan atau Pembubaran, stempel otomatis "Tidak Perlu Stempel"
         if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
             stempelDisplay = "Tidak Perlu Stempel";
         }
@@ -397,7 +396,7 @@ function renderBerkasTable(data) {
 }
 
 // ============================================================
-// RENDER LEGALITAS TABLE
+// RENDER LEGALITAS TABLE - DENGAN OSS
 // ============================================================
 
 function renderLegalitasTable(data) {
@@ -423,6 +422,9 @@ function renderLegalitasTable(data) {
         }
         const skDate = item.tgl_sk_setuju || item.tgl_sk;
         
+        // OSS Status
+        const ossStatus = item.oss_status || "Belum Selesai";
+        
         let statusBadgeHtml;
         if (isTerkendala) {
             statusBadgeHtml = `
@@ -443,13 +445,54 @@ function renderLegalitasTable(data) {
                 <td>${statusBadgeHtml}</td>
                 <td>${skDate ? formatDate(skDate) : '-'}</td>
                 <td>${escapeHTML(stempelDisplay)}</td>
-                <td>${escapeHTML(item.pengiriman || "-")}</td>
+                <td>
+                    <select class="oss-select" data-id="${item.id}" onchange="updateOSS(${item.id}, this.value)">
+                        <option value="Belum Selesai" ${ossStatus === "Belum Selesai" ? 'selected' : ''}>⏳ Belum Selesai</option>
+                        <option value="Sudah Selesai" ${ossStatus === "Sudah Selesai" ? 'selected' : ''}>✅ Sudah Selesai</option>
+                    </select>
+                </td>
                 <td>
                     <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
                 </td>
             </tr>
         `;
     }).join("");
+}
+
+// ============================================================
+// UPDATE OSS STATUS
+// ============================================================
+
+async function updateOSS(id, value) {
+    try {
+        const { error } = await supabaseClient
+            .from(TABLE_NAME)
+            .update({ oss_status: value })
+            .eq("id", id);
+
+        if (error) throw error;
+
+        const index = allData.findIndex(x => x.id === id);
+        if (index !== -1) {
+            allData[index].oss_status = value;
+        }
+
+        renderLegalitasTable(filterLegalitas());
+        
+        Swal.fire({
+            icon: 'success',
+            title: `OSS ${value}!`,
+            timer: 1000,
+            showConfirmButton: false
+        });
+    } catch (error) {
+        console.error("❌ Error update OSS:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal update OSS!',
+            text: error.message
+        });
+    }
 }
 
 // ============================================================
@@ -512,7 +555,6 @@ function renderPengirimanTable(data) {
 
     if (!table) return;
 
-    // Filter data pengiriman
     filteredPengirimanData = filterPengirimanData(data);
     const totalItems = filteredPengirimanData.length;
     const totalPages = Math.ceil(totalItems / itemsPerPagePengiriman);
@@ -973,17 +1015,24 @@ document.getElementById("filterLegalitasKategori").addEventListener("change", fu
     renderLegalitasTable(filterLegalitas());
 });
 
+document.getElementById("filterLegalitasOSS").addEventListener("change", function() {
+    renderLegalitasTable(filterLegalitas());
+});
+
 function filterLegalitas() {
     const search = document.getElementById("searchLegalitas").value.toLowerCase().trim();
     const kategori = document.getElementById("filterLegalitasKategori").value;
+    const oss = document.getElementById("filterLegalitasOSS").value;
 
     return allData.filter(item => {
         const text = (item.nama_badan_hukum || "") + " " + (item.kategori_entitas || "");
         const isSelesai = item.tgl_sk_setuju || item.tgl_sk;
+        const ossStatus = item.oss_status || "Belum Selesai";
         return (
             isSelesai &&
             (!search || text.toLowerCase().includes(search)) &&
-            (!kategori || item.kategori_entitas === kategori)
+            (!kategori || item.kategori_entitas === kategori) &&
+            (!oss || ossStatus === oss)
         );
     });
 }
@@ -1147,7 +1196,6 @@ window.editData = function(id) {
     document.getElementById('kategori').value = item.kategori_entitas || '';
     document.getElementById('bentukEntitas').value = item.bentuk_entitas || '';
     
-    // Handle stempel
     let stempelValue = item.pesan_stempel || 'Dari Simpelbiz Stempel';
     if (item.kategori_entitas === 'Perubahan' || item.kategori_entitas === 'Pembubaran') {
         document.getElementById('stempelField').style.display = 'none';
@@ -1232,7 +1280,8 @@ berkasForm.addEventListener('submit', async function(e) {
         tgl_kirim_ambil: document.getElementById('tglKirimAmbil').value || null,
         catatan: document.getElementById('catatanKendala').value.trim(),
         kirim_notaris: document.getElementById('tglDikirimNotaris').value || null,
-        tgl_sk_setuju: document.getElementById('tglSK').value || null
+        tgl_sk_setuju: document.getElementById('tglSK').value || null,
+        oss_status: document.getElementById('status').value === 'Selesai' ? 'Belum Selesai' : 'Belum Selesai'
     };
 
     if (!payload.nama_badan_hukum || !payload.kategori_entitas) {
@@ -1556,6 +1605,7 @@ function exportLegalitasPDF() {
             if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
                 stempelDisplay = "Tidak Perlu Stempel";
             }
+            const ossStatus = item.oss_status || "Belum Selesai";
             return [
                 index + 1,
                 item.nama_badan_hukum || '-',
@@ -1563,12 +1613,13 @@ function exportLegalitasPDF() {
                 item.bentuk_entitas || '-',
                 item.status || '-',
                 item.tgl_sk_setuju ? formatDate(item.tgl_sk_setuju) : '-',
-                stempelDisplay
+                stempelDisplay,
+                ossStatus
             ];
         });
         
         doc.autoTable({
-            head: [['No', 'Nama Badan Hukum', 'Kategori', 'Bentuk', 'Status', 'Tgl SK Setuju', 'Stempel']],
+            head: [['No', 'Nama Badan Hukum', 'Kategori', 'Bentuk', 'Status', 'Tgl SK Setuju', 'Stempel', 'OSS']],
             body: tableData,
             startY: 48,
             styles: { fontSize: 9 },
@@ -1606,8 +1657,8 @@ function exportDashboardPDF() {
         const terkendala = allData.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
         const pengiriman = allData.filter(d => d.pengiriman === 'JNE' || d.pengiriman === 'GoSend').length;
         const legalitas = allData.filter(d => d.tgl_sk_setuju || d.tgl_sk).length;
+        const ossSelesai = allData.filter(d => d.oss_status === "Sudah Selesai").length;
         
-        // Data dari tabel pengiriman
         const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
         const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
         const client = allPengiriman.filter(x => x.metode_pengiriman === "Diambil Client").length;
@@ -1622,6 +1673,7 @@ function exportDashboardPDF() {
                 ['Terkendala', terkendala],
                 ['Dalam Pengiriman', pengiriman],
                 ['Legalitas Selesai', legalitas],
+                ['OSS Sudah Selesai', ossSelesai],
                 ['JNE', jne],
                 ['GoSend', gosend],
                 ['Diambil Client', client],
@@ -1771,8 +1823,8 @@ function exportExecutivePDF() {
         const proses = allData.filter(d => d.status && d.status.toLowerCase() === 'proses').length;
         const terkendala = allData.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
         const legalitas = allData.filter(d => d.tgl_sk_setuju || d.tgl_sk).length;
+        const ossSelesai = allData.filter(d => d.oss_status === "Sudah Selesai").length;
         
-        // Data pengiriman
         const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
         const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
         
@@ -1787,6 +1839,7 @@ function exportExecutivePDF() {
             ['Dalam Proses', proses],
             ['Terkendala', terkendala],
             ['Legalitas Selesai', legalitas],
+            ['OSS Sudah Selesai', ossSelesai],
             ['Persentase Selesai', total > 0 ? Math.round((selesai / total) * 100) + '%' : '0%'],
             ['JNE', jne],
             ['GoSend', gosend]
@@ -1894,5 +1947,6 @@ window.exportExecutivePDF = exportExecutivePDF;
 window.showKendala = showKendala;
 window.changePage = changePage;
 window.changePengirimanPage = changePengirimanPage;
+window.updateOSS = updateOSS;
 
 console.log("✅ SIMPELBIZ APP READY!");

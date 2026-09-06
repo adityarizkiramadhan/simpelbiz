@@ -2702,3 +2702,51 @@ body.dark-mode .btn-outline:hover {
         font-size: 10px;
     }
 }
+/* ============================================================
+   OSS SELECT STYLE
+============================================================ */
+
+.oss-select {
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--white);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Inter', sans-serif;
+}
+
+.oss-select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+}
+
+.oss-select option[value="Sudah Selesai"] {
+    color: #10b981;
+}
+
+.oss-select option[value="Belum Selesai"] {
+    color: #f59e0b;
+}
+
+body.dark-mode .oss-select {
+    background: #1E293B;
+    border-color: #334155;
+    color: #F8FAFC;
+}
+
+body.dark-mode .oss-select:focus {
+    border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .oss-select {
+        font-size: 10px;
+        padding: 2px 6px;
+        max-width: 100px;
+    }
+}
