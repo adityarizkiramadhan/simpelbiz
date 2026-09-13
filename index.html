@@ -12,16 +12,14 @@
 <body>
 
    <!-- =========================================================
+ <!=========================================================
      LOGIN PAGE
 ========================================================= -->
 <div id="loginPage" class="login-page">
     <div class="login-container">
         <div class="login-box">
             <div class="login-brand">
-                <div class="login-icon-wrapper">
-                    <i class="fas fa-scale-balanced"></i>
-                </div>
-                <h1 class="login-title">SIMPELBIZ</h1>
+                <img src="simpelbiz.png" alt="Simpelbiz Logo" class="login-logo-img">
                 <p class="login-subtitle">MANAGEMENT NOTARIS</p>
                 <div class="login-divider"></div>
             </div>
@@ -59,19 +57,16 @@
     ========================================================= -->
     <div id="appPage" class="app hidden">
 
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <div class="brand-icon">
-                    <i class="fas fa-scale-balanced"></i>
-                </div>
-                <div class="brand-text">
-                    <h2>SIMPELBIZ</h2>
-                    <span>MANAGEMENT NOTARIS</span>
-                </div>
-            </div>
+      <!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <img src="simpelbiz.png" alt="Simpelbiz Logo" class="sidebar-logo-img">
+        <div class="brand-text">
+            <span>MANAGEMENT NOTARIS</span>
+        </div>
+    </div>
 
-            <div class="sidebar-divider"></div>
+    <div class="sidebar-divider"></div>
 
             <nav class="sidebar-nav">
                 <!-- Dashboard -->
@@ -187,29 +182,33 @@
         <!-- MAIN CONTENT -->
         <main class="main-content">
 
-            <!-- TOPBAR -->
-            <header class="topbar">
-                <div class="topbar-left">
-                    <h1 id="pageTitle">Dashboard Monitoring</h1>
-                    <p id="pageSubtitle">Pantau progress setiap berkas notaris secara real-time</p>
-                </div>
-                <div class="topbar-right">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="globalSearch" placeholder="Cari berkas...">
-                    </div>
-                    <div class="weather-widget">
-                        <i class="fas fa-sun"></i>
-                        <span>32°C</span>
-                        <small>Cerah</small>
-                    </div>
-                    <div class="notification-bell">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge">3</span>
-                    </div>
-                    <div class="user-avatar-small">AD</div>
-                </div>
-            </header>
+         <header class="topbar">
+    <div class="topbar-left">
+        <h1 id="pageTitle">Dashboard Monitoring</h1>
+        <p id="pageSubtitle">Pantau progress setiap berkas notaris secara real-time</p>
+    </div>
+    <div class="topbar-right">
+        <!-- TOMBOL TOGGLE DARK/LIGHT MODE -->
+        <button class="theme-toggle-topbar" id="themeToggle" onclick="toggleTheme()" title="Ganti Tema (Dark/Light)">
+            <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        
+        <div class="search-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="globalSearch" placeholder="Cari berkas...">
+        </div>
+        <div class="weather-widget">
+            <i class="fas fa-sun"></i>
+            <span>32°C</span>
+            <small>Cerah</small>
+        </div>
+        <div class="notification-bell">
+            <i class="fas fa-bell"></i>
+            <span class="badge">3</span>
+        </div>
+        <div class="user-avatar-small">AD</div>
+    </div>
+</header>
 
             <!-- CONTENT AREA -->
             <section class="content-area">
@@ -495,68 +494,69 @@
                     </div>
                 </div>
 
-                <!-- =============================================
-                     LEGALITAS SELESAI PAGE - DENGAN OSS
-                ============================================= -->
-                <div id="legalitasPage" class="page hidden">
-                    <div class="page-header">
-                        <div>
-                            <h1><i class="fas fa-check-circle"></i> Legalitas Sudah Selesai</h1>
-                            <p>Daftar berkas yang legalitasnya sudah selesai (SK sudah keluar)</p>
-                        </div>
-                        <div class="header-actions">
-                            <button class="btn btn-outline" onclick="refreshData()">
-                                <i class="fas fa-sync"></i> Refresh
-                            </button>
-                        </div>
-                    </div>
+              <!-- =============================================
+     LEGALITAS SELESAI PAGE - DENGAN OSS & KENDALA
+============================================= -->
+<div id="legalitasPage" class="page hidden">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-check-circle"></i> Legalitas Sudah Selesai</h1>
+            <p>Daftar berkas yang legalitasnya sudah selesai (SK sudah keluar)</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline" onclick="refreshData()">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
 
-                    <div class="table-panel">
-                        <div class="filter-bar">
-                            <div class="filter-item">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="searchLegalitas" placeholder="Cari nama...">
-                            </div>
-                            <div class="filter-item">
-                                <i class="fas fa-tag"></i>
-                                <select id="filterLegalitasKategori">
-                                    <option value="">Semua Kategori</option>
-                                    <option value="Pendirian Baru">Pendirian Baru</option>
-                                    <option value="Perubahan">Perubahan</option>
-                                    <option value="Pembubaran">Pembubaran</option>
-                                    <option value="RUPS">RUPS</option>
-                                </select>
-                            </div>
-                            <div class="filter-item">
-                                <i class="fas fa-check-circle"></i>
-                                <select id="filterLegalitasOSS">
-                                    <option value="">Semua OSS</option>
-                                    <option value="Sudah Selesai">Sudah Selesai</option>
-                                    <option value="Belum Selesai">Belum Selesai</option>
-                                </select>
-                            </div>
-                        </div>
+    <div class="table-panel">
+        <div class="filter-bar">
+            <div class="filter-item">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchLegalitas" placeholder="Cari nama...">
+            </div>
+            <div class="filter-item">
+                <i class="fas fa-tag"></i>
+                <select id="filterLegalitasKategori">
+                    <option value="">Semua Kategori</option>
+                    <option value="Pendirian Baru">Pendirian Baru</option>
+                    <option value="Perubahan">Perubahan</option>
+                    <option value="Pembubaran">Pembubaran</option>
+                    <option value="RUPS">RUPS</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <i class="fas fa-check-circle"></i>
+                <select id="filterLegalitasOSS">
+                    <option value="">Semua OSS</option>
+                    <option value="Sudah Selesai">Sudah Selesai</option>
+                    <option value="Belum Selesai">Belum Selesai</option>
+                </select>
+            </div>
+        </div>
 
-                        <div class="table-wrapper">
-                            <table class="data-table full">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Nama Badan Hukum</th>
-                                        <th>Kategori</th>
-                                        <th>Bentuk</th>
-                                        <th>Status</th>
-                                        <th>SK Setuju</th>
-                                        <th>Stempel</th>
-                                        <th>OSS</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="legalitasTable"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        <div class="table-wrapper">
+            <table class="data-table full">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nama Badan Hukum</th>
+                        <th>Kategori</th>
+                        <th>Bentuk</th>
+                        <th>Status</th>
+                        <th>SK Setuju</th>
+                        <th>Stempel</th>
+                        <th>OSS</th>
+                        <th>Keterangan OSS</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="legalitasTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
                 <!-- =============================================
                      STEMPEL PAGE

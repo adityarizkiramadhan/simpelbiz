@@ -2750,3 +2750,477 @@ body.dark-mode .oss-select:focus {
         max-width: 100px;
     }
 }
+/* ============================================================
+   OSS KETERANGAN STYLE
+============================================================ */
+
+.oss-keterangan-col {
+    max-width: 220px;
+    min-width: 150px;
+}
+
+/* Badge OSS Selesai */
+.oss-done-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #dcfce7;
+    color: #15803d;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #86efac;
+}
+
+.oss-done-badge i {
+    font-size: 11px;
+}
+
+/* Badge OSS Kendala - Merah */
+.oss-kendala-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1.5px solid #fecaca;
+    animation: pulseOSS 2s ease-in-out infinite;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.oss-kendala-badge:hover {
+    background: #dc2626;
+    color: white;
+    transform: scale(1.05);
+    animation: none;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.oss-kendala-badge i {
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+@keyframes pulseOSS {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3);
+    }
+    50% { 
+        box-shadow: 0 0 0 5px rgba(220, 38, 38, 0);
+    }
+}
+
+/* OSS Select */
+.oss-select {
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--white);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Inter', sans-serif;
+    min-width: 130px;
+}
+
+.oss-select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+}
+
+.oss-select option[value="Sudah Selesai"] {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.oss-select option[value="Belum Selesai"] {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+/* Dark Mode */
+body.dark-mode .oss-select {
+    background: #1E293B;
+    border-color: #334155;
+    color: #F8FAFC;
+}
+
+body.dark-mode .oss-select:focus {
+    border-color: var(--primary);
+}
+
+body.dark-mode .oss-done-badge {
+    background: #064e3b;
+    color: #6ee7b7;
+    border-color: #10b981;
+}
+
+body.dark-mode .oss-kendala-badge {
+    background: #3f1d24;
+    color: #fca5a5;
+    border-color: #7f1d1d;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .oss-keterangan-col {
+        max-width: 180px;
+        min-width: 120px;
+    }
+    
+    .oss-select {
+        min-width: 110px;
+        font-size: 11px;
+    }
+    
+    .oss-kendala-badge,
+    .oss-done-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .oss-keterangan-col {
+        max-width: 140px;
+        min-width: 100px;
+    }
+    
+    .oss-select {
+        min-width: 100px;
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+    
+    .oss-kendala-badge,
+    .oss-done-badge {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+}
+/* ============================================================
+   LOGO STYLING
+============================================================ */
+
+/* Logo Login */
+.login-logo-img {
+    max-width: 240px;
+    width: 100%;
+    height: auto;
+    margin: 0 auto 12px;
+    display: block;
+    object-fit: contain;
+}
+
+/* Logo Sidebar */
+.sidebar-logo-img {
+    max-width: 160px;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    margin-bottom: 4px;
+}
+
+.sidebar-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.brand-text span {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+/* Dark Mode - Logo PNG */
+body.dark-mode .login-logo-img,
+body.dark-mode .sidebar-logo-img {
+    filter: brightness(1.15) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* Responsive Logo */
+@media (max-width: 768px) {
+    .login-logo-img {
+        max-width: 180px;
+    }
+    .sidebar-logo-img {
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-logo-img {
+        max-width: 150px;
+    }
+    .sidebar-logo-img {
+        max-width: 100px;
+    }
+}
+/* ============================================================
+   DARK MODE VARIABLES
+============================================================ */
+body.dark-mode {
+    --bg: #0F172A;
+    --white: #1E293B;
+    --text: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --border: #334155;
+    --shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    --shadow-hover: 0 15px 50px rgba(0, 0, 0, 0.50);
+}
+
+/* ============================================================
+   THEME TOGGLE BUTTON
+============================================================ */
+.theme-toggle-topbar {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.theme-toggle-topbar:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: rotate(20deg) scale(1.08);
+    background: rgba(108, 99, 255, 0.08);
+}
+
+.theme-toggle-topbar i {
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .theme-toggle-topbar i {
+    color: #FFD93D;
+}
+
+body.dark-mode .theme-toggle-topbar:hover {
+    background: rgba(255, 217, 61, 0.1);
+    border-color: #FFD93D;
+    color: #FFD93D;
+}
+
+/* ============================================================
+   DARK MODE - ELEMENT ADJUSTMENTS
+============================================================ */
+
+body.dark-mode {
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Login Page */
+body.dark-mode .login-page {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+body.dark-mode .login-box {
+    background: rgba(30, 41, 59, 0.92);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Sidebar */
+body.dark-mode .sidebar {
+    background: var(--white);
+    border-color: var(--border);
+}
+
+body.dark-mode .nav-item:hover {
+    background: rgba(108, 99, 255, 0.15);
+}
+
+body.dark-mode .nav-item.active {
+    background: rgba(108, 99, 255, 0.2);
+}
+
+body.dark-mode .sidebar-user {
+    background: #182232;
+}
+
+/* Topbar */
+body.dark-mode .topbar {
+    background: var(--white);
+    border-color: var(--border);
+}
+
+body.dark-mode .search-wrapper {
+    background: #182232;
+    border-color: var(--border);
+}
+
+body.dark-mode .weather-widget {
+    background: #182232;
+}
+
+/* Cards & Panels */
+body.dark-mode .stat-card,
+body.dark-mode .chart-panel,
+body.dark-mode .table-panel,
+body.dark-mode .form-card,
+body.dark-mode .report-card,
+body.dark-mode .modal-container {
+    background: var(--white);
+    border-color: var(--border);
+}
+
+body.dark-mode .stat-icon {
+    background: #334155;
+}
+
+body.dark-mode .method-item {
+    background: #182232;
+    border-color: var(--border);
+}
+
+body.dark-mode .method-item:hover {
+    background: rgba(108, 99, 255, 0.15);
+}
+
+/* Table */
+body.dark-mode .data-table thead th {
+    background: #182232;
+    color: var(--text-secondary);
+    border-color: var(--border);
+}
+
+body.dark-mode .data-table tbody td {
+    border-color: var(--border);
+    color: var(--text);
+}
+
+body.dark-mode .data-table tbody tr:hover {
+    background: #162030;
+}
+
+/* Filter Bar */
+body.dark-mode .filter-bar {
+    background: #182232;
+    border-color: var(--border);
+}
+
+body.dark-mode .filter-item {
+    background: var(--white);
+    border-color: var(--border);
+}
+
+body.dark-mode .filter-item input,
+body.dark-mode .filter-item select {
+    color: var(--text);
+}
+
+/* Pagination */
+body.dark-mode .pagination-container {
+    background: #182232;
+    border-color: var(--border);
+}
+
+body.dark-mode .pagination-btn {
+    background: var(--white);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+/* Form */
+body.dark-mode .form-field input,
+body.dark-mode .form-field select,
+body.dark-mode .form-field textarea,
+body.dark-mode .input-with-icon input,
+body.dark-mode .input-with-icon select,
+body.dark-mode .input-with-icon textarea {
+    background: #182232;
+    border-color: var(--border);
+    color: var(--text);
+}
+
+body.dark-mode .form-field input:focus,
+body.dark-mode .form-field select:focus,
+body.dark-mode .form-field textarea:focus {
+    border-color: var(--primary);
+}
+
+/* Modal */
+body.dark-mode .modal-header-gradient {
+    background: linear-gradient(135deg, #4f46e5 0%, #6C63FF 50%, #059669 100%);
+}
+
+body.dark-mode .modal-footer {
+    border-color: var(--border);
+}
+
+/* Buttons */
+body.dark-mode .btn-outline {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+body.dark-mode .btn-outline:hover {
+    background: rgba(108, 99, 255, 0.15);
+    color: var(--primary);
+}
+
+/* Chart */
+body.dark-mode .chart-bar {
+    background: #334155;
+}
+
+/* Report Cards */
+body.dark-mode .report-card:hover {
+    background: #182232;
+}
+
+/* Footer */
+body.dark-mode .app-footer {
+    background: var(--white);
+    border-color: var(--border);
+}
+
+/* Logo - filter agar tetap terlihat */
+body.dark-mode .login-logo-img,
+body.dark-mode .sidebar-logo-img {
+    filter: brightness(1.2) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* Brand Text */
+body.dark-mode .brand-text span {
+    color: var(--text-secondary);
+}
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #182232;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: var(--primary);
+}

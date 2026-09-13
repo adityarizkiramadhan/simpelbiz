@@ -42,22 +42,82 @@ function getCatatanKendala(item) {
 }
 
 // ============================================================
+// THEME MANAGEMENT (DARK / LIGHT MODE)
+// ============================================================
+
+function initTheme() {
+    const savedTheme = localStorage.getItem("simpelbiz_theme") || "light";
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-mode");
+        updateThemeIcon("dark");
+    } else {
+        document.body.classList.remove("dark-mode");
+        updateThemeIcon("light");
+    }
+}
+
+function toggleTheme() {
+    const isDark = document.body.classList.contains("dark-mode");
+    
+    if (isDark) {
+        document.body.classList.remove("dark-mode");
+        localStorage.setItem("simpelbiz_theme", "light");
+        updateThemeIcon("light");
+        showThemeNotification("☀️ Light Mode Aktif");
+    } else {
+        document.body.classList.add("dark-mode");
+        localStorage.setItem("simpelbiz_theme", "dark");
+        updateThemeIcon("dark");
+        showThemeNotification("🌙 Dark Mode Aktif");
+    }
+}
+
+function updateThemeIcon(theme) {
+    const icon = document.getElementById("themeIcon");
+    if (!icon) return;
+    
+    if (theme === "dark") {
+        icon.className = "fas fa-sun";
+    } else {
+        icon.className = "fas fa-moon";
+    }
+}
+
+function showThemeNotification(message) {
+    Swal.fire({
+        icon: 'success',
+        title: message,
+        timer: 1000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+    });
+}
+
+// ============================================================
 // START
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", function() {
     console.log("🚀 SIMPELBIZ started");
+    
+    // Init Theme
+    initTheme();
+    
     showLogin();
     
-    document.getElementById("kategori").addEventListener("change", function() {
-        const stempelField = document.getElementById("stempelField");
-        if (this.value === "Perubahan" || this.value === "Pembubaran") {
-            stempelField.style.display = "none";
-            document.getElementById("pesanStempel").value = "Tidak Perlu Stempel";
-        } else {
-            stempelField.style.display = "block";
-        }
-    });
+    const kategoriEl = document.getElementById("kategori");
+    if (kategoriEl) {
+        kategoriEl.addEventListener("change", function() {
+            const stempelField = document.getElementById("stempelField");
+            if (this.value === "Perubahan" || this.value === "Pembubaran") {
+                stempelField.style.display = "none";
+                document.getElementById("pesanStempel").value = "Tidak Perlu Stempel";
+            } else {
+                stempelField.style.display = "block";
+            }
+        });
+    }
 });
 
 // ============================================================
@@ -262,7 +322,8 @@ function renderDashboard() {
     document.getElementById("recentCount").textContent = total + " berkas";
 
     const legalitasCount = allData.filter(x => x.tgl_sk_setuju || x.tgl_sk).length;
-    document.getElementById("legalitasCount").textContent = legalitasCount;
+    const legalitasEl = document.getElementById("legalitasCount");
+    if (legalitasEl) legalitasEl.textContent = legalitasCount;
 
     // Data Pengiriman dari tabel pengiriman
     const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
@@ -396,7 +457,7 @@ function renderBerkasTable(data) {
 }
 
 // ============================================================
-// RENDER LEGALITAS TABLE - DENGAN OSS
+// RENDER LEGALITAS TABLE - DENGAN OSS & KETERANGAN KENDALA
 // ============================================================
 
 function renderLegalitasTable(data) {
@@ -410,7 +471,7 @@ function renderLegalitasTable(data) {
     if (countEl) countEl.textContent = legalitasData.length;
 
     if (!legalitasData || !legalitasData.length) {
-        table.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#7b8497;">Belum ada data legalitas yang selesai.</td></tr>`;
+        table.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:#7b8497;">Belum ada data legalitas yang selesai.</td></tr>`;
         return;
     }
 
@@ -424,6 +485,8 @@ function renderLegalitasTable(data) {
         
         // OSS Status
         const ossStatus = item.oss_status || "Belum Selesai";
+        const ossKeterangan = item.oss_keterangan || "";
+        const isOSSSelesai = ossStatus === "Sudah Selesai";
         
         let statusBadgeHtml;
         if (isTerkendala) {
@@ -451,6 +514,15 @@ function renderLegalitasTable(data) {
                         <option value="Sudah Selesai" ${ossStatus === "Sudah Selesai" ? 'selected' : ''}>✅ Sudah Selesai</option>
                     </select>
                 </td>
+                <td class="oss-keterangan-col">
+                    ${isOSSSelesai 
+                        ? `<span class="oss-done-badge"><i class="fas fa-check-circle"></i> Selesai</span>`
+                        : `<span class="oss-kendala-badge" onclick="showOSSDetail('${escapeHTML(item.nama_badan_hukum)}', '${escapeHTML(ossKeterangan)}', ${item.id})">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            ${ossKeterangan ? escapeHTML(ossKeterangan.length > 25 ? ossKeterangan.substring(0, 25) + '...' : ossKeterangan) : 'Klik untuk isi keterangan'}
+                        </span>`
+                    }
+                </td>
                 <td>
                     <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
                 </td>
@@ -465,31 +537,154 @@ function renderLegalitasTable(data) {
 
 async function updateOSS(id, value) {
     try {
+        const item = allData.find(x => x.id === id);
+        if (!item) return;
+
+        // Jika berubah ke "Belum Selesai", kosongkan keterangan dan minta isi
+        if (value === "Belum Selesai") {
+            const { error } = await supabaseClient
+                .from(TABLE_NAME)
+                .update({ 
+                    oss_status: value,
+                    oss_keterangan: null
+                })
+                .eq("id", id);
+
+            if (error) throw error;
+
+            const index = allData.findIndex(x => x.id === id);
+            if (index !== -1) {
+                allData[index].oss_status = value;
+                allData[index].oss_keterangan = null;
+            }
+
+            renderLegalitasTable(filterLegalitas());
+
+            // Langsung munculkan form isi keterangan
+            setTimeout(() => {
+                showOSSDetail(item.nama_badan_hukum, "", id);
+            }, 300);
+        } else {
+            // Jika "Sudah Selesai", langsung update
+            const { error } = await supabaseClient
+                .from(TABLE_NAME)
+                .update({ 
+                    oss_status: value,
+                    oss_keterangan: null
+                })
+                .eq("id", id);
+
+            if (error) throw error;
+
+            const index = allData.findIndex(x => x.id === id);
+            if (index !== -1) {
+                allData[index].oss_status = value;
+                allData[index].oss_keterangan = null;
+            }
+
+            renderLegalitasTable(filterLegalitas());
+            
+            Swal.fire({
+                icon: 'success',
+                title: '✅ OSS Sudah Selesai!',
+                timer: 1000,
+                showConfirmButton: false
+            });
+        }
+    } catch (error) {
+        console.error("❌ Error update OSS:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal update OSS!',
+            text: error.message
+        });
+    }
+}
+
+// ============================================================
+// SHOW OSS DETAIL / INPUT KETERANGAN KENDALA
+// ============================================================
+
+function showOSSDetail(nama, keterangan, id) {
+    Swal.fire({
+        title: '⚠️ Kendala OSS',
+        html: `
+            <div style="text-align:left; padding:10px;">
+                <p style="margin-bottom:12px;"><strong>📋 Nama Badan Hukum:</strong><br> ${escapeHTML(nama)}</p>
+                <hr style="margin:10px 0; border-color:#e5e7eb;">
+                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#1A1A2E;">
+                    <i class="fas fa-pen" style="color:#6C63FF;"></i> Keterangan Kendala OSS:
+                </label>
+                <textarea 
+                    id="ossKeteranganInput" 
+                    placeholder="Tuliskan kenapa OSS belum selesai (contoh: menunggu verifikasi NIB, data belum lengkap, dll)..."
+                    style="width:100%; min-height:100px; padding:12px; border:2px solid #E5E7EB; border-radius:10px; font-family:Inter, sans-serif; font-size:13px; resize:vertical; outline:none;"
+                    onfocus="this.style.borderColor='#6C63FF'; this.style.boxShadow='0 0 0 4px rgba(108,99,255,0.1)';"
+                    onblur="this.style.borderColor='#E5E7EB'; this.style.boxShadow='none';"
+                >${escapeHTML(keterangan || '')}</textarea>
+                <p style="margin-top:10px; font-size:12px; color:#9CA3AF;">
+                    <i class="fas fa-info-circle"></i> Keterangan ini akan terlihat oleh admin dan karyawan lainnya.
+                </p>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#6C63FF',
+        cancelButtonColor: '#EF4444',
+        confirmButtonText: '<i class="fas fa-save"></i> Simpan Keterangan',
+        cancelButtonText: 'Batal',
+        width: '550px',
+        preConfirm: () => {
+            const input = document.getElementById('ossKeteranganInput');
+            if (!input.value.trim()) {
+                Swal.showValidationMessage('⚠️ Keterangan kendala wajib diisi!');
+                return false;
+            }
+            return input.value.trim();
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed && result.value) {
+            await saveOSSKeterangan(id, result.value);
+        }
+    });
+}
+
+// ============================================================
+// SAVE OSS KETERANGAN KE SUPABASE
+// ============================================================
+
+async function saveOSSKeterangan(id, keterangan) {
+    try {
         const { error } = await supabaseClient
             .from(TABLE_NAME)
-            .update({ oss_status: value })
+            .update({ 
+                oss_status: "Belum Selesai",
+                oss_keterangan: keterangan
+            })
             .eq("id", id);
 
         if (error) throw error;
 
         const index = allData.findIndex(x => x.id === id);
         if (index !== -1) {
-            allData[index].oss_status = value;
+            allData[index].oss_status = "Belum Selesai";
+            allData[index].oss_keterangan = keterangan;
         }
 
         renderLegalitasTable(filterLegalitas());
-        
+
         Swal.fire({
             icon: 'success',
-            title: `OSS ${value}!`,
-            timer: 1000,
+            title: '✅ Keterangan tersimpan!',
+            text: 'Kendala OSS berhasil dicatat',
+            timer: 1500,
             showConfirmButton: false
         });
     } catch (error) {
-        console.error("❌ Error update OSS:", error);
+        console.error("❌ Error save OSS keterangan:", error);
         Swal.fire({
             icon: 'error',
-            title: 'Gagal update OSS!',
+            title: 'Gagal menyimpan!',
             text: error.message
         });
     }
@@ -1536,7 +1731,7 @@ window.deletePengiriman = async function(id) {
 };
 
 // ============================================================
-// EXPORT FUNCTIONS
+// EXPORT PDF
 // ============================================================
 
 function exportAllPDF() {
@@ -1588,17 +1783,17 @@ function exportAllPDF() {
 function exportLegalitasPDF() {
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
         
         const legalitasData = allData.filter(item => item.tgl_sk_setuju || item.tgl_sk);
         
-        doc.setFontSize(22);
+        doc.setFontSize(20);
         doc.setTextColor('#6C63FF');
-        doc.text('SIMPELBIZ - Laporan Legalitas Selesai', 14, 25);
+        doc.text('SIMPELBIZ - Laporan Legalitas Selesai', 14, 20);
         doc.setFontSize(10);
         doc.setTextColor('#666');
-        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 33);
-        doc.text(`Total Legalitas Selesai: ${legalitasData.length} berkas`, 14, 40);
+        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
+        doc.text(`Total Legalitas Selesai: ${legalitasData.length} berkas`, 14, 33);
         
         const tableData = legalitasData.map((item, index) => {
             let stempelDisplay = item.pesan_stempel || "-";
@@ -1606,6 +1801,7 @@ function exportLegalitasPDF() {
                 stempelDisplay = "Tidak Perlu Stempel";
             }
             const ossStatus = item.oss_status || "Belum Selesai";
+            const ossKet = item.oss_keterangan || "-";
             return [
                 index + 1,
                 item.nama_badan_hukum || '-',
@@ -1614,17 +1810,21 @@ function exportLegalitasPDF() {
                 item.status || '-',
                 item.tgl_sk_setuju ? formatDate(item.tgl_sk_setuju) : '-',
                 stempelDisplay,
-                ossStatus
+                ossStatus,
+                ossKet
             ];
         });
         
         doc.autoTable({
-            head: [['No', 'Nama Badan Hukum', 'Kategori', 'Bentuk', 'Status', 'Tgl SK Setuju', 'Stempel', 'OSS']],
+            head: [['No', 'Nama Badan Hukum', 'Kategori', 'Bentuk', 'Status', 'Tgl SK Setuju', 'Stempel', 'OSS', 'Keterangan OSS']],
             body: tableData,
-            startY: 48,
-            styles: { fontSize: 9 },
+            startY: 40,
+            styles: { fontSize: 7 },
             headStyles: { fillColor: '#10B981', textColor: '#fff' },
-            alternateRowStyles: { fillColor: '#F0F2F8' }
+            alternateRowStyles: { fillColor: '#F0F2F8' },
+            columnStyles: {
+                8: { cellWidth: 50, fontSize: 6 }
+            }
         });
         
         doc.setFontSize(10);
@@ -1948,5 +2148,7 @@ window.showKendala = showKendala;
 window.changePage = changePage;
 window.changePengirimanPage = changePengirimanPage;
 window.updateOSS = updateOSS;
+window.showOSSDetail = showOSSDetail;
+window.toggleTheme = toggleTheme;
 
 console.log("✅ SIMPELBIZ APP READY!");
