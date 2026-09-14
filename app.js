@@ -302,6 +302,7 @@ function renderAll() {
 }
 
 // ============================================================
+// ============================================================
 // RENDER DASHBOARD
 // ============================================================
 
@@ -312,12 +313,19 @@ function renderDashboard() {
     const seleksi = allData.filter(x => x.status && x.status.toLowerCase() === "seleksi").length;
     const terkendala = allData.filter(x => x.status && x.status.toLowerCase() === "terkendala").length;
     const menunggu = allData.filter(x => x.status && x.status.toLowerCase().includes("menunggu")).length;
-    const pengiriman = allData.filter(x => x.pengiriman === "JNE" || x.pengiriman === "GoSend").length;
+
+    // ✅ Total Dikirim diambil dari tabel PENGIRIMAN (konsisten dengan JNE/GoSend)
+    const totalDikirim = allPengiriman.filter(x => 
+        x.metode_pengiriman === "JNE" || 
+        x.metode_pengiriman === "GoSend" || 
+        x.metode_pengiriman === "Kurir Internal" ||
+        x.status === "Dikirim"
+    ).length;
 
     document.getElementById("totalBerkas").textContent = total;
     document.getElementById("totalSelesai").textContent = selesai + seleksi;
     document.getElementById("totalProses").textContent = proses + menunggu;
-    document.getElementById("totalKirim").textContent = pengiriman;
+    document.getElementById("totalKirim").textContent = totalDikirim;  // ← UBAH INI
     document.getElementById("sidebarTotal").textContent = total;
     document.getElementById("recentCount").textContent = total + " berkas";
 
@@ -325,11 +333,14 @@ function renderDashboard() {
     const legalitasEl = document.getElementById("legalitasCount");
     if (legalitasEl) legalitasEl.textContent = legalitasCount;
 
-    // Data Pengiriman dari tabel pengiriman
+    // ✅ Data Pengiriman - SEMUA dari tabel allPengiriman (konsisten)
     const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
     const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
     const client = allPengiriman.filter(x => x.metode_pengiriman === "Diambil Client").length;
-    const belum = allPengiriman.filter(x => x.metode_pengiriman === "Belum Dikirim" || x.status === "Belum Dikirim").length;
+    const belum = allPengiriman.filter(x => 
+        x.metode_pengiriman === "Belum Dikirim" || 
+        x.status === "Belum Dikirim"
+    ).length;
 
     document.getElementById("jneCount").textContent = jne;
     document.getElementById("gosendCount").textContent = gosend;
