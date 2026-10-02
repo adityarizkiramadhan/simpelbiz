@@ -42,6 +42,33 @@ function getCatatanKendala(item) {
 }
 
 // ============================================================
+// FILTER DATA KHUSUS
+// ============================================================
+
+// Data AKTIF (belum selesai)
+function getDataAktif() {
+    return allData.filter(item => !item.tgl_sk_setuju && !item.tgl_sk);
+}
+
+// Data SIAP Tanda Tangan (HANYA status "Menunggu TTD")
+function getDataSiapTTD() {
+    return getDataAktif().filter(item => {
+        const status = (item.status || "").toLowerCase().trim();
+        return status === "menunggu ttd";
+    });
+}
+
+// Data PT/CV Terkendala SK
+function getDataTerkendala() {
+    return getDataAktif().filter(item => isDataTerkendala(item));
+}
+
+// Data Legalitas Selesai
+function getDataLegalitas() {
+    return allData.filter(item => item.tgl_sk_setuju || item.tgl_sk);
+}
+
+// ============================================================
 // THEME MANAGEMENT (DARK / LIGHT MODE)
 // ============================================================
 
@@ -101,9 +128,7 @@ function showThemeNotification(message) {
 document.addEventListener("DOMContentLoaded", function() {
     console.log("🚀 SIMPELBIZ started");
     
-    // Init Theme
     initTheme();
-    
     showLogin();
     
     const kategoriEl = document.getElementById("kategori");
@@ -243,7 +268,7 @@ async function savePengiriman(payload) {
             .select();
 
         if (error) throw error;
-        console.log("✅ Pengiriman tersimpan di Supabase:", data);
+        console.log("✅ Pengiriman tersimpan:", data);
         return data[0];
     } catch (error) {
         console.error("❌ Error save pengiriman:", error);
@@ -260,7 +285,7 @@ async function updatePengiriman(id, payload) {
             .select();
 
         if (error) throw error;
-        console.log("✅ Pengiriman diupdate di Supabase:", data);
+        console.log("✅ Pengiriman diupdate:", data);
         return data[0];
     } catch (error) {
         console.error("❌ Error update pengiriman:", error);
@@ -276,7 +301,7 @@ async function deletePengirimanFromSupabase(id) {
             .eq("id", id);
 
         if (error) throw error;
-        console.log("✅ Pengiriman dihapus dari Supabase");
+        console.log("✅ Pengiriman dihapus");
         return true;
     } catch (error) {
         console.error("❌ Error delete pengiriman:", error);
@@ -292,29 +317,49 @@ function renderAll() {
     console.log("📊 Rendering", allData.length, "data");
     renderDashboard();
     renderRecentTable();
-    renderBerkasTable(allData);
+    renderBerkasTable(getDataAktif());
     currentPage = 1;
-    renderMonitoringTable(allData);
-    renderLegalitasTable(allData);
-    renderStempelTable(allData);
+    renderMonitoringTable(getDataAktif());
+    renderSiapTTDTable(getDataSiapTTD());
+    renderTerkendalaTable(getDataTerkendala());
+    renderLegalitasTable(getDataLegalitas());
+    renderStempelTable(getDataAktif());
     currentPengirimanPage = 1;
     renderPengirimanTable(allPengiriman);
+    updateMenuCounts();
 }
 
-// ============================================================
+function updateMenuCounts() {
+    const aktif = getDataAktif().length;
+    const siapTTD = getDataSiapTTD().length;
+    const terkendala = getDataTerkendala().length;
+    const legalitas = getDataLegalitas().length;
+
+    const sidebarTotal = document.getElementById("sidebarTotal");
+    const siapTTDCount = document.getElementById("siapTTDCount");
+    const terkendalaCount = document.getElementById("terkendalaCount");
+    const legalitasCount = document.getElementById("legalitasCount");
+
+    if (sidebarTotal) sidebarTotal.textContent = aktif;
+    if (siapTTDCount) siapTTDCount.textContent = siapTTD;
+    if (terkendalaCount) terkendalaCount.textContent = terkendala;
+    if (legalitasCount) legalitasCount.textContent = legalitas;
+}
+
 // ============================================================
 // RENDER DASHBOARD
 // ============================================================
 
 function renderDashboard() {
-    const total = allData.length;
-    const selesai = allData.filter(x => x.status && x.status.toLowerCase() === "selesai").length;
-    const proses = allData.filter(x => x.status && x.status.toLowerCase() === "proses").length;
-    const seleksi = allData.filter(x => x.status && x.status.toLowerCase() === "seleksi").length;
-    const terkendala = allData.filter(x => x.status && x.status.toLowerCase() === "terkendala").length;
-    const menunggu = allData.filter(x => x.status && x.status.toLowerCase().includes("menunggu")).length;
+    const aktif = getDataAktif();
+    const total = aktif.length;
+    
+    const selesai = aktif.filter(x => x.status && x.status.toLowerCase() === "selesai").length;
+    const proses = aktif.filter(x => x.status && x.status.toLowerCase() === "proses").length;
+    const seleksi = aktif.filter(x => x.status && x.status.toLowerCase() === "seleksi").length;
+    const terkendala = aktif.filter(x => x.status && x.status.toLowerCase() === "terkendala").length;
+    const menunggu = aktif.filter(x => x.status && x.status.toLowerCase().includes("menunggu")).length;
 
-    // ✅ Total Dikirim diambil dari tabel PENGIRIMAN (konsisten dengan JNE/GoSend)
     const totalDikirim = allPengiriman.filter(x => 
         x.metode_pengiriman === "JNE" || 
         x.metode_pengiriman === "GoSend" || 
@@ -325,15 +370,12 @@ function renderDashboard() {
     document.getElementById("totalBerkas").textContent = total;
     document.getElementById("totalSelesai").textContent = selesai + seleksi;
     document.getElementById("totalProses").textContent = proses + menunggu;
-    document.getElementById("totalKirim").textContent = totalDikirim;  // ← UBAH INI
+    document.getElementById("totalKirim").textContent = totalDikirim;
     document.getElementById("sidebarTotal").textContent = total;
     document.getElementById("recentCount").textContent = total + " berkas";
 
-    const legalitasCount = allData.filter(x => x.tgl_sk_setuju || x.tgl_sk).length;
-    const legalitasEl = document.getElementById("legalitasCount");
-    if (legalitasEl) legalitasEl.textContent = legalitasCount;
+    updateMenuCounts();
 
-    // ✅ Data Pengiriman - SEMUA dari tabel allPengiriman (konsisten)
     const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
     const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
     const client = allPengiriman.filter(x => x.metode_pengiriman === "Diambil Client").length;
@@ -373,7 +415,7 @@ function chartRow(label, count, total) {
 // ============================================================
 
 function renderRecentTable() {
-    const recent = allData.slice(0, 5);
+    const recent = getDataAktif().slice(0, 5);
     const table = document.getElementById("recentTable");
 
     if (!table) return;
@@ -413,7 +455,7 @@ function renderRecentTable() {
 }
 
 // ============================================================
-// RENDER BERKAS TABLE
+// RENDER BERKAS TABLE (HANYA DATA AKTIF)
 // ============================================================
 
 function renderBerkasTable(data) {
@@ -422,7 +464,7 @@ function renderBerkasTable(data) {
     if (!table) return;
 
     if (!data || !data.length) {
-        table.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#7b8497;">Tidak ada data.</td></tr>`;
+        table.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#7b8497;">Tidak ada data berkas aktif.</td></tr>`;
         return;
     }
 
@@ -468,7 +510,91 @@ function renderBerkasTable(data) {
 }
 
 // ============================================================
-// RENDER LEGALITAS TABLE - DENGAN OSS & KETERANGAN KENDALA
+// RENDER SIAP TANDA TANGAN TABLE
+// ============================================================
+
+function renderSiapTTDTable(data) {
+    const table = document.getElementById("siapTTDTable");
+    const countEl = document.getElementById("siapTTDTableCount");
+
+    if (!table) return;
+
+    if (countEl) countEl.textContent = data.length + " berkas";
+
+    if (!data || !data.length) {
+        table.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#7b8497;">Belum ada berkas yang siap tanda tangan.</td></tr>`;
+        return;
+    }
+
+    table.innerHTML = data.map((item, index) => {
+        let stempelDisplay = item.pesan_stempel || "-";
+        if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
+            stempelDisplay = "Tidak Perlu Stempel";
+        }
+        
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
+                <td>${escapeHTML(item.kategori_entitas || "-")}</td>
+                <td>${escapeHTML(item.bentuk_entitas || "-")}</td>
+                <td>${item.kirim_notaris ? formatDate(item.kirim_notaris) : '-'}</td>
+                <td><span style="color:#10B981; font-weight:700;">✅ ${item.terima_minuta ? formatDate(item.terima_minuta) : '-'}</span></td>
+                <td>${statusBadge(item.status)}</td>
+                <td>
+                    <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+// ============================================================
+// RENDER PT/CV TERKENDALA TABLE
+// ============================================================
+
+function renderTerkendalaTable(data) {
+    const table = document.getElementById("terkendalaTable");
+    const countEl = document.getElementById("terkendalaTableCount");
+
+    if (!table) return;
+
+    if (countEl) countEl.textContent = data.length + " berkas";
+
+    if (!data || !data.length) {
+        table.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:#7b8497;">Tidak ada berkas yang terkendala. 🎉</td></tr>`;
+        return;
+    }
+
+    table.innerHTML = data.map((item, index) => {
+        const catatan = getCatatanKendala(item);
+        
+        return `
+            <tr class="row-terkendala">
+                <td>${index + 1}</td>
+                <td><strong>${escapeHTML(item.nama_badan_hukum || "-")}</strong></td>
+                <td>${escapeHTML(item.kategori_entitas || "-")}</td>
+                <td>${escapeHTML(item.bentuk_entitas || "-")}</td>
+                <td>
+                    <span class="status-badge terkendala" style="background:#fee2e2 !important; color:#dc2626 !important; border:2px solid #dc2626 !important; font-weight:700; animation:pulseKendala 1.5s infinite;">
+                        ⚠️ ${escapeHTML(item.status || "Terkendala")}
+                    </span>
+                </td>
+                <td class="kendala-col">
+                    <span class="kendala-badge" onclick="showKendala('${escapeHTML(item.nama_badan_hukum)}', '${escapeHTML(catatan)}')">
+                        <i class="fas fa-exclamation-triangle"></i> ${escapeHTML(catatan.length > 30 ? catatan.substring(0, 30) + '...' : catatan)}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn-outline btn-sm" onclick="editData(${item.id})"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+// ============================================================
+// RENDER LEGALITAS TABLE - DENGAN OSS & KETERANGAN
 // ============================================================
 
 function renderLegalitasTable(data) {
@@ -477,16 +603,14 @@ function renderLegalitasTable(data) {
 
     if (!table) return;
 
-    const legalitasData = data.filter(item => item.tgl_sk_setuju || item.tgl_sk);
+    if (countEl) countEl.textContent = data.length;
 
-    if (countEl) countEl.textContent = legalitasData.length;
-
-    if (!legalitasData || !legalitasData.length) {
+    if (!data || !data.length) {
         table.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:#7b8497;">Belum ada data legalitas yang selesai.</td></tr>`;
         return;
     }
 
-    table.innerHTML = legalitasData.map((item, index) => {
+    table.innerHTML = data.map((item, index) => {
         const isTerkendala = isDataTerkendala(item);
         let stempelDisplay = item.pesan_stempel || "-";
         if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
@@ -494,7 +618,6 @@ function renderLegalitasTable(data) {
         }
         const skDate = item.tgl_sk_setuju || item.tgl_sk;
         
-        // OSS Status
         const ossStatus = item.oss_status || "Belum Selesai";
         const ossKeterangan = item.oss_keterangan || "";
         const isOSSSelesai = ossStatus === "Sudah Selesai";
@@ -551,14 +674,10 @@ async function updateOSS(id, value) {
         const item = allData.find(x => x.id === id);
         if (!item) return;
 
-        // Jika berubah ke "Belum Selesai", kosongkan keterangan dan minta isi
         if (value === "Belum Selesai") {
             const { error } = await supabaseClient
                 .from(TABLE_NAME)
-                .update({ 
-                    oss_status: value,
-                    oss_keterangan: null
-                })
+                .update({ oss_status: value, oss_keterangan: null })
                 .eq("id", id);
 
             if (error) throw error;
@@ -571,18 +690,13 @@ async function updateOSS(id, value) {
 
             renderLegalitasTable(filterLegalitas());
 
-            // Langsung munculkan form isi keterangan
             setTimeout(() => {
                 showOSSDetail(item.nama_badan_hukum, "", id);
             }, 300);
         } else {
-            // Jika "Sudah Selesai", langsung update
             const { error } = await supabaseClient
                 .from(TABLE_NAME)
-                .update({ 
-                    oss_status: value,
-                    oss_keterangan: null
-                })
+                .update({ oss_status: value, oss_keterangan: null })
                 .eq("id", id);
 
             if (error) throw error;
@@ -613,7 +727,7 @@ async function updateOSS(id, value) {
 }
 
 // ============================================================
-// SHOW OSS DETAIL / INPUT KETERANGAN KENDALA
+// SHOW OSS DETAIL
 // ============================================================
 
 function showOSSDetail(nama, keterangan, id) {
@@ -630,8 +744,6 @@ function showOSSDetail(nama, keterangan, id) {
                     id="ossKeteranganInput" 
                     placeholder="Tuliskan kenapa OSS belum selesai (contoh: menunggu verifikasi NIB, data belum lengkap, dll)..."
                     style="width:100%; min-height:100px; padding:12px; border:2px solid #E5E7EB; border-radius:10px; font-family:Inter, sans-serif; font-size:13px; resize:vertical; outline:none;"
-                    onfocus="this.style.borderColor='#6C63FF'; this.style.boxShadow='0 0 0 4px rgba(108,99,255,0.1)';"
-                    onblur="this.style.borderColor='#E5E7EB'; this.style.boxShadow='none';"
                 >${escapeHTML(keterangan || '')}</textarea>
                 <p style="margin-top:10px; font-size:12px; color:#9CA3AF;">
                     <i class="fas fa-info-circle"></i> Keterangan ini akan terlihat oleh admin dan karyawan lainnya.
@@ -661,7 +773,7 @@ function showOSSDetail(nama, keterangan, id) {
 }
 
 // ============================================================
-// SAVE OSS KETERANGAN KE SUPABASE
+// SAVE OSS KETERANGAN
 // ============================================================
 
 async function saveOSSKeterangan(id, keterangan) {
@@ -702,7 +814,7 @@ async function saveOSSKeterangan(id, keterangan) {
 }
 
 // ============================================================
-// RENDER STEMPEL TABLE
+// RENDER STEMPEL TABLE (HANYA DATA AKTIF)
 // ============================================================
 
 function renderStempelTable(data) {
@@ -875,20 +987,6 @@ function statusBadge(status) {
 }
 
 // ============================================================
-// GET STATUS CLASS
-// ============================================================
-
-function getStatusClass(status) {
-    let cls = String(status || "").toLowerCase();
-    if (cls.includes("selesai")) return "selesai";
-    if (cls.includes("seleksi")) return "seleksi";
-    if (cls.includes("terkendala")) return "terkendala";
-    if (cls.includes("menunggu")) return "menunggu";
-    if (cls.includes("proses")) return "proses";
-    return "proses";
-}
-
-// ============================================================
 // GET PROGRESS STEPS
 // ============================================================
 
@@ -929,7 +1027,7 @@ function getProgressSteps(item) {
 }
 
 // ============================================================
-// RENDER MONITORING TABLE
+// RENDER MONITORING TABLE (HANYA DATA AKTIF)
 // ============================================================
 
 function renderMonitoringTable(data) {
@@ -1013,7 +1111,7 @@ function renderMonitoringTable(data) {
 }
 
 // ============================================================
-// FILTER MONITORING DATA
+// FILTER MONITORING DATA (HANYA DATA AKTIF)
 // ============================================================
 
 function filterMonitoringData(data) {
@@ -1022,14 +1120,13 @@ function filterMonitoringData(data) {
     const status = document.getElementById("filterMonitoringStatus")?.value || "";
     const kendala = document.getElementById("filterKendala")?.value || "";
 
-    return (data || allData).filter(item => {
+    return getDataAktif().filter(item => {
         const text = (item.nama_badan_hukum || "") + " " + (item.kategori_entitas || "");
         const isTerkendala = isDataTerkendala(item);
-        const hasKendala = (item.catatan && item.catatan.length > 0) || (item.catatan_kendala && item.catatan_kendala.length > 0);
         
         let matchKendala = true;
-        if (kendala === 'ada') matchKendala = isTerkendala || hasKendala;
-        else if (kendala === 'tidak') matchKendala = !isTerkendala && !hasKendala;
+        if (kendala === 'ada') matchKendala = isTerkendala;
+        else if (kendala === 'tidak') matchKendala = !isTerkendala;
         
         return (
             (!search || text.toLowerCase().includes(search)) &&
@@ -1149,10 +1246,10 @@ document.getElementById("globalSearch").addEventListener("input", function() {
     const value = this.value.toLowerCase().trim();
     navigateToPage('berkas');
     if (!value) {
-        renderBerkasTable(allData);
+        renderBerkasTable(getDataAktif());
         return;
     }
-    const result = allData.filter(item =>
+    const result = getDataAktif().filter(item =>
         JSON.stringify(item).toLowerCase().includes(value)
     );
     renderBerkasTable(result);
@@ -1175,7 +1272,7 @@ function filterBerkas() {
     const kategori = document.getElementById("filterKategori").value;
     const status = document.getElementById("filterStatus").value;
 
-    return allData.filter(item => {
+    return getDataAktif().filter(item => {
         const text = (item.nama_badan_hukum || "") + " " + (item.kategori_entitas || "");
         return (
             (!search || text.toLowerCase().includes(search)) &&
@@ -1230,12 +1327,10 @@ function filterLegalitas() {
     const kategori = document.getElementById("filterLegalitasKategori").value;
     const oss = document.getElementById("filterLegalitasOSS").value;
 
-    return allData.filter(item => {
+    return getDataLegalitas().filter(item => {
         const text = (item.nama_badan_hukum || "") + " " + (item.kategori_entitas || "");
-        const isSelesai = item.tgl_sk_setuju || item.tgl_sk;
         const ossStatus = item.oss_status || "Belum Selesai";
         return (
-            isSelesai &&
             (!search || text.toLowerCase().includes(search)) &&
             (!kategori || item.kategori_entitas === kategori) &&
             (!oss || ossStatus === oss)
@@ -1259,7 +1354,7 @@ function filterStempel() {
     const search = document.getElementById("searchStempel").value.toLowerCase().trim();
     const stempel = document.getElementById("filterStempel").value;
 
-    return allData.filter(item => {
+    return getDataAktif().filter(item => {
         if (item.kategori_entitas !== "Pendirian Baru") return false;
         const text = (item.nama_badan_hukum || "") + " " + (item.pesan_stempel || "");
         return (
@@ -1306,12 +1401,14 @@ function navigateToPage(page) {
     
     const titles = {
         dashboard: ['Dashboard Monitoring', 'Pantau progress setiap berkas notaris secara real-time'],
-        berkas: ['Data Berkas', 'Kelola seluruh data berkas notaris dengan mudah'],
-        monitoring: ['Monitoring Semua Berkas', 'Lihat progress seluruh berkas dari awal hingga selesai'],
+        berkas: ['Data Berkas', 'Kelola seluruh data berkas notaris yang masih aktif'],
+        monitoring: ['Monitoring Semua Berkas', 'Lihat progress seluruh berkas aktif dari awal hingga selesai'],
+        siapttd: ['SIAP Tanda Tangan', 'Berkas yang sudah siap untuk tanda tangan'],
+        terkendala: ['PT/CV Terkendala SK', 'Berkas PT/CV yang sedang terkendala'],
         legalitas: ['Legalitas Sudah Selesai', 'Daftar berkas yang legalitasnya sudah selesai'],
-        stempel: ['Pesan / Status Stempel', 'Kelola status pemesanan stempel perusahaan (Khusus Pendirian)'],
+        stempel: ['Pesan / Status Stempel', 'Kelola status pemesanan stempel perusahaan'],
         pengiriman: ['Data Pengiriman', 'Kelola metode pengiriman berkas'],
-        laporan: ['Laporan PDF', 'Cetak laporan data berkas dengan berbagai format']
+        laporan: ['Laporan PDF', 'Cetak laporan data berkas']
     };
     
     const titleData = titles[page] || ['Halaman', ''];
@@ -1328,27 +1425,22 @@ document.querySelectorAll('.nav-item[data-page]').forEach(item => {
         const page = this.dataset.page;
         navigateToPage(page);
         if (page === 'berkas') {
-            renderBerkasTable(filterBerkas());
+            renderBerkasTable(getDataAktif());
         } else if (page === 'monitoring') {
             currentPage = 1;
-            renderMonitoringTable(allData);
+            renderMonitoringTable(getDataAktif());
+        } else if (page === 'siapttd') {
+            renderSiapTTDTable(getDataSiapTTD());
+        } else if (page === 'terkendala') {
+            renderTerkendalaTable(getDataTerkendala());
         } else if (page === 'legalitas') {
-            renderLegalitasTable(filterLegalitas());
+            renderLegalitasTable(getDataLegalitas());
         } else if (page === 'stempel') {
-            renderStempelTable(filterStempel());
+            renderStempelTable(getDataAktif());
         } else if (page === 'pengiriman') {
             currentPengirimanPage = 1;
             renderPengirimanTable(allPengiriman);
         }
-    });
-});
-
-document.querySelectorAll('.nav-item[data-category]').forEach(item => {
-    item.addEventListener('click', function() {
-        navigateToPage('monitoring');
-        document.getElementById('filterMonitoringKategori').value = this.dataset.category;
-        currentPage = 1;
-        renderMonitoringTable(allData);
     });
 });
 
@@ -1365,7 +1457,7 @@ function openAddModal() {
     
     document.getElementById('status').value = 'Sedang Dalam Proses';
     document.getElementById('metodePengiriman').value = 'Belum Dikirim';
-    document.getElementById('pesanStempel').value = 'Dari Simpelbiz Stempel';
+    document.getElementById('pesanStempel').value = 'Belum Pesan Stempel';
     document.getElementById('berkasId').value = '';
     
     document.getElementById('stempelField').style.display = 'block';
@@ -1378,8 +1470,6 @@ function openAddModal() {
     
     document.getElementById('berkasModal').classList.remove('hidden');
     updateProgress(1);
-    
-    console.log('📋 Modal Tambah dibuka');
 }
 
 // ============================================================
@@ -1402,7 +1492,7 @@ window.editData = function(id) {
     document.getElementById('kategori').value = item.kategori_entitas || '';
     document.getElementById('bentukEntitas').value = item.bentuk_entitas || '';
     
-    let stempelValue = item.pesan_stempel || 'Dari Simpelbiz Stempel';
+    let stempelValue = item.pesan_stempel || 'Belum Pesan Stempel';
     if (item.kategori_entitas === 'Perubahan' || item.kategori_entitas === 'Pembubaran') {
         document.getElementById('stempelField').style.display = 'none';
         stempelValue = 'Tidak Perlu Stempel';
@@ -1430,8 +1520,6 @@ window.editData = function(id) {
     
     document.getElementById('berkasModal').classList.remove('hidden');
     updateProgress(2);
-    
-    console.log('✏️ Edit data ID:', id);
 };
 
 // ============================================================
@@ -1487,7 +1575,7 @@ berkasForm.addEventListener('submit', async function(e) {
         catatan: document.getElementById('catatanKendala').value.trim(),
         kirim_notaris: document.getElementById('tglDikirimNotaris').value || null,
         tgl_sk_setuju: document.getElementById('tglSK').value || null,
-        oss_status: document.getElementById('status').value === 'Selesai' ? 'Belum Selesai' : 'Belum Selesai'
+        oss_status: 'Belum Selesai'
     };
 
     if (!payload.nama_badan_hukum || !payload.kategori_entitas) {
@@ -1496,8 +1584,6 @@ berkasForm.addEventListener('submit', async function(e) {
         button.innerHTML = editingId ? '<i class="fas fa-save"></i> Update Data Folder' : '<i class="fas fa-save"></i> Simpan Data Folder';
         return;
     }
-
-    console.log('📝 Menyimpan data:', payload);
 
     try {
         let result;
@@ -1612,7 +1698,7 @@ document.getElementById('monitoringTambah').addEventListener('click', openAddMod
 
 document.getElementById('dashboardToBerkas').addEventListener('click', function() {
     navigateToPage('berkas');
-    renderBerkasTable(filterBerkas());
+    renderBerkasTable(getDataAktif());
 });
 
 // ============================================================
@@ -1689,20 +1775,10 @@ pengirimanForm.addEventListener('submit', async function(e) {
     try {
         if (editingPengirimanId) {
             await updatePengiriman(editingPengirimanId, payload);
-            Swal.fire({
-                icon: 'success',
-                title: '✅ Pengiriman diperbarui!',
-                timer: 1500,
-                showConfirmButton: false
-            });
+            Swal.fire({ icon: 'success', title: '✅ Pengiriman diperbarui!', timer: 1500, showConfirmButton: false });
         } else {
             await savePengiriman(payload);
-            Swal.fire({
-                icon: 'success',
-                title: '✅ Pengiriman ditambahkan!',
-                timer: 1500,
-                showConfirmButton: false
-            });
+            Swal.fire({ icon: 'success', title: '✅ Pengiriman ditambahkan!', timer: 1500, showConfirmButton: false });
         }
         await loadPengiriman();
         document.getElementById('pengirimanModal').classList.add('hidden');
@@ -1756,7 +1832,7 @@ function exportAllPDF() {
         doc.setFontSize(10);
         doc.setTextColor('#666');
         doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
-        doc.text(`Total Data: ${allData.length} berkas`, 14, 33);
+        doc.text(`Total Data Aktif: ${allData.length} berkas`, 14, 33);
         
         const tableData = allData.map(item => {
             let stempelDisplay = item.pesan_stempel || "-";
@@ -1796,7 +1872,7 @@ function exportLegalitasPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
         
-        const legalitasData = allData.filter(item => item.tgl_sk_setuju || item.tgl_sk);
+        const legalitasData = getDataLegalitas();
         
         doc.setFontSize(20);
         doc.setTextColor('#6C63FF');
@@ -1861,30 +1937,29 @@ function exportDashboardPDF() {
         doc.setTextColor('#666');
         doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 33);
         
-        const total = allData.length;
-        const selesai = allData.filter(d => d.status && d.status.toLowerCase() === 'selesai').length;
-        const proses = allData.filter(d => d.status && d.status.toLowerCase() === 'proses').length;
-        const seleksi = allData.filter(d => d.status && d.status.toLowerCase() === 'seleksi').length;
-        const terkendala = allData.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
-        const pengiriman = allData.filter(d => d.pengiriman === 'JNE' || d.pengiriman === 'GoSend').length;
-        const legalitas = allData.filter(d => d.tgl_sk_setuju || d.tgl_sk).length;
-        const ossSelesai = allData.filter(d => d.oss_status === "Sudah Selesai").length;
+        const aktif = getDataAktif();
+        const total = aktif.length;
+        const selesai = aktif.filter(d => d.status && d.status.toLowerCase() === 'selesai').length;
+        const proses = aktif.filter(d => d.status && d.status.toLowerCase() === 'proses').length;
+        const seleksi = aktif.filter(d => d.status && d.status.toLowerCase() === 'seleksi').length;
+        const terkendala = aktif.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
+        const legalitas = getDataLegalitas().length;
+        const siapTTD = getDataSiapTTD().length;
         
         const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
         const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
         const client = allPengiriman.filter(x => x.metode_pengiriman === "Diambil Client").length;
-        const belum = allPengiriman.filter(x => x.metode_pengiriman === "Belum Dikirim" || x.status === "Belum Dikirim").length;
+        const belum = allPengiriman.filter(x => x.metode_pengiriman === "Belum Dikirim").length;
         
         doc.autoTable({
             head: [['Statistik', 'Jumlah']],
             body: [
-                ['Total Berkas', total],
+                ['Total Berkas Aktif', total],
                 ['Selesai / Seleksi', selesai + seleksi],
                 ['Dalam Proses', proses],
                 ['Terkendala', terkendala],
-                ['Dalam Pengiriman', pengiriman],
+                ['SIAP Tanda Tangan', siapTTD],
                 ['Legalitas Selesai', legalitas],
-                ['OSS Sudah Selesai', ossSelesai],
                 ['JNE', jne],
                 ['GoSend', gosend],
                 ['Diambil Client', client],
@@ -1913,9 +1988,9 @@ function exportMonitoringPDF() {
         doc.setFontSize(10);
         doc.setTextColor('#666');
         doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
-        doc.text(`Total Berkas: ${allData.length}`, 14, 33);
+        doc.text(`Total Berkas Aktif: ${getDataAktif().length}`, 14, 33);
         
-        const tableData = allData.map((item, index) => {
+        const tableData = getDataAktif().map((item, index) => {
             let stempelDisplay = item.pesan_stempel || "-";
             if (item.kategori_entitas === "Perubahan" || item.kategori_entitas === "Pembubaran") {
                 stempelDisplay = "Tidak Perlu Stempel";
@@ -1969,10 +2044,10 @@ function exportKategoriPDF() {
         doc.setFontSize(10);
         doc.setTextColor('#666');
         doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
-        doc.text(`Total: ${allData.length} berkas`, 14, 33);
+        doc.text(`Total: ${getDataAktif().length} berkas aktif`, 14, 33);
         
         categories.forEach(cat => {
-            const items = allData.filter(d => d.kategori_entitas === cat);
+            const items = getDataAktif().filter(d => d.kategori_entitas === cat);
             if (items.length === 0) return;
             
             if (yPos > 250) {
@@ -2029,12 +2104,13 @@ function exportExecutivePDF() {
         doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 44);
         
         let yPos = 60;
-        const total = allData.length;
-        const selesai = allData.filter(d => d.status && (d.status.toLowerCase() === 'selesai' || d.status.toLowerCase() === 'seleksi')).length;
-        const proses = allData.filter(d => d.status && d.status.toLowerCase() === 'proses').length;
-        const terkendala = allData.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
-        const legalitas = allData.filter(d => d.tgl_sk_setuju || d.tgl_sk).length;
-        const ossSelesai = allData.filter(d => d.oss_status === "Sudah Selesai").length;
+        const aktif = getDataAktif();
+        const total = aktif.length;
+        const selesai = aktif.filter(d => d.status && (d.status.toLowerCase() === 'selesai' || d.status.toLowerCase() === 'seleksi')).length;
+        const proses = aktif.filter(d => d.status && d.status.toLowerCase() === 'proses').length;
+        const terkendala = aktif.filter(d => d.status && d.status.toLowerCase() === 'terkendala').length;
+        const legalitas = getDataLegalitas().length;
+        const siapTTD = getDataSiapTTD().length;
         
         const jne = allPengiriman.filter(x => x.metode_pengiriman === "JNE").length;
         const gosend = allPengiriman.filter(x => x.metode_pengiriman === "GoSend").length;
@@ -2045,12 +2121,12 @@ function exportExecutivePDF() {
         yPos += 8;
         
         const stats = [
-            ['Total Berkas', total],
+            ['Total Berkas Aktif', total],
             ['Selesai / Seleksi', selesai],
             ['Dalam Proses', proses],
             ['Terkendala', terkendala],
+            ['SIAP Tanda Tangan', siapTTD],
             ['Legalitas Selesai', legalitas],
-            ['OSS Sudah Selesai', ossSelesai],
             ['Persentase Selesai', total > 0 ? Math.round((selesai / total) * 100) + '%' : '0%'],
             ['JNE', jne],
             ['GoSend', gosend]
@@ -2066,16 +2142,16 @@ function exportExecutivePDF() {
         
         doc.setFontSize(12);
         doc.setTextColor('#1A1A2E');
-        doc.text('📋 DAFTAR BERKAS', 14, yPos);
+        doc.text('📋 DAFTAR BERKAS AKTIF', 14, yPos);
         yPos += 8;
         
-        allData.forEach((item, idx) => {
+        aktif.forEach((item, idx) => {
             if (yPos > 260) {
                 doc.addPage();
                 yPos = 20;
                 doc.setFontSize(12);
                 doc.setTextColor('#1A1A2E');
-                doc.text('📋 DAFTAR BERKAS (lanjutan)', 14, yPos);
+                doc.text('📋 DAFTAR BERKAS AKTIF (lanjutan)', 14, yPos);
                 yPos += 8;
             }
             doc.setFontSize(9);
