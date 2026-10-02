@@ -11,62 +11,60 @@
 </head>
 <body>
 
-   <!-- =========================================================
- <!=========================================================
-     LOGIN PAGE
-========================================================= -->
-<div id="loginPage" class="login-page">
-    <div class="login-container">
-        <div class="login-box">
-            <div class="login-brand">
-                <img src="simpelbiz.png" alt="Simpelbiz Logo" class="login-logo-img">
-                <p class="login-subtitle">MANAGEMENT NOTARIS</p>
-                <div class="login-divider"></div>
-            </div>
-            
-            <form id="loginForm" class="login-form">
-                <div class="login-field">
-                    <label><i class="fas fa-envelope"></i> Email Address</label>
-                    <input type="email" id="loginEmail" placeholder="admin@simpelbiz.id" value="admin@simpelbiz.id" required>
+    <!-- =========================================================
+         LOGIN PAGE
+    ========================================================= -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container">
+            <div class="login-box">
+                <div class="login-brand">
+                    <img src="simpelbiz.png" alt="Simpelbiz Logo" class="login-logo-img">
+                    <p class="login-subtitle">MANAGEMENT NOTARIS</p>
+                    <div class="login-divider"></div>
                 </div>
-                <div class="login-field">
-                    <label><i class="fas fa-lock"></i> Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" value="admin123" required>
+                
+                <form id="loginForm" class="login-form">
+                    <div class="login-field">
+                        <label><i class="fas fa-envelope"></i> Email Address</label>
+                        <input type="email" id="loginEmail" placeholder="admin@simpelbiz.id" value="admin@simpelbiz.id" required>
+                    </div>
+                    <div class="login-field">
+                        <label><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" value="admin123" required>
+                    </div>
+                    <button type="submit" class="btn-login-submit" id="loginButton">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                </form>
+                
+                <div id="loginError" class="login-error"></div>
+                
+                <div class="login-footer">
+                    <span class="login-hint">🔑 Default: admin@simpelbiz.id / admin123</span>
                 </div>
-                <button type="submit" class="btn-login-submit" id="loginButton">
-                    <i class="fas fa-sign-in-alt"></i> Sign In
-                </button>
-            </form>
-            
-            <div id="loginError" class="login-error"></div>
-            
-            <div class="login-footer">
-                <span class="login-hint">🔑 Default: admin@simpelbiz.id / admin123</span>
-            </div>
 
-            <!-- FOOTER LOGIN -->
-            <div class="login-footer-bottom">
-                <p>© 2026 Penerbit Aditya Rizki Ramadhan S.Kom - All Rights Reserved</p>
+                <div class="login-footer-bottom">
+                    <p>© 2026 Penerbit Aditya Rizki Ramadhan S.Kom - All Rights Reserved</p>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
     <!-- =========================================================
          MAIN APP
     ========================================================= -->
     <div id="appPage" class="app hidden">
 
-      <!-- SIDEBAR -->
-<aside class="sidebar">
-    <div class="sidebar-brand">
-        <img src="simpelbiz.png" alt="Simpelbiz Logo" class="sidebar-logo-img">
-        <div class="brand-text">
-            <span>MANAGEMENT NOTARIS</span>
-        </div>
-    </div>
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="simpelbiz.png" alt="Simpelbiz Logo" class="sidebar-logo-img">
+                <div class="brand-text">
+                    <span>MANAGEMENT NOTARIS</span>
+                </div>
+            </div>
 
-    <div class="sidebar-divider"></div>
+            <div class="sidebar-divider"></div>
 
             <nav class="sidebar-nav">
                 <!-- Dashboard -->
@@ -75,6 +73,7 @@
                     <span class="nav-label">Dashboard</span>
                     <span class="nav-badge live">Live</span>
                 </button>
+
                 <!-- Data Berkas -->
                 <button class="nav-item" data-page="berkas">
                     <span class="nav-icon"><i class="fas fa-folder-open"></i></span>
@@ -90,40 +89,24 @@
 
                 <div class="nav-section">📊 MONITORING</div>
 
-                <!-- Monitoring Semua -->
+                <!-- Semua Berkas -->
                 <button class="nav-item" data-page="monitoring">
                     <span class="nav-icon"><i class="fas fa-chart-simple"></i></span>
                     <span class="nav-label">Semua Berkas</span>
                 </button>
 
-                <!-- Monitoring Pendirian -->
-                <button class="nav-item" data-category="Pendirian Baru" data-page="monitoring">
-                    <span class="nav-icon"><i class="fas fa-building"></i></span>
-                    <span class="nav-label">Pendirian</span>
+                <!-- SIAP Tanda Tangan -->
+                <button class="nav-item" data-page="siapttd">
+                    <span class="nav-icon"><i class="fas fa-signature"></i></span>
+                    <span class="nav-label">SIAP Tanda Tangan</span>
+                    <span class="nav-badge" id="siapTTDCount">0</span>
                 </button>
 
-                <!-- Monitoring Perubahan -->
-                <button class="nav-item" data-category="Perubahan" data-page="monitoring">
-                    <span class="nav-icon"><i class="fas fa-pen-to-square"></i></span>
-                    <span class="nav-label">Perubahan</span>
-                </button>
-
-                <!-- Monitoring Pembubaran -->
-                <button class="nav-item" data-category="Pembubaran" data-page="monitoring">
-                    <span class="nav-icon"><i class="fas fa-times-circle"></i></span>
-                    <span class="nav-label">Pembubaran</span>
-                </button>
-
-                <!-- Monitoring Lainnya -->
-                <button class="nav-item" data-category="Lainnya" data-page="monitoring">
-                    <span class="nav-icon"><i class="fas fa-ellipsis-h"></i></span>
-                    <span class="nav-label">Lainnya</span>
-                </button>
-
-                <!-- Monitoring RUPS -->
-                <button class="nav-item" data-category="RUPS" data-page="monitoring">
-                    <span class="nav-icon"><i class="fas fa-users"></i></span>
-                    <span class="nav-label">RUPS</span>
+                <!-- PT/CV Terkendala SK -->
+                <button class="nav-item" data-page="terkendala">
+                    <span class="nav-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                    <span class="nav-label">PT/CV Terkendala SK</span>
+                    <span class="nav-badge" id="terkendalaCount">0</span>
                 </button>
 
                 <div class="nav-section">📋 LEGALITAS</div>
@@ -182,33 +165,33 @@
         <!-- MAIN CONTENT -->
         <main class="main-content">
 
-         <header class="topbar">
-    <div class="topbar-left">
-        <h1 id="pageTitle">Dashboard Monitoring</h1>
-        <p id="pageSubtitle">Pantau progress setiap berkas notaris secara real-time</p>
-    </div>
-    <div class="topbar-right">
-        <!-- TOMBOL TOGGLE DARK/LIGHT MODE -->
-        <button class="theme-toggle-topbar" id="themeToggle" onclick="toggleTheme()" title="Ganti Tema (Dark/Light)">
-            <i class="fas fa-moon" id="themeIcon"></i>
-        </button>
-        
-        <div class="search-wrapper">
-            <i class="fas fa-search"></i>
-            <input type="text" id="globalSearch" placeholder="Cari berkas...">
-        </div>
-        <div class="weather-widget">
-            <i class="fas fa-sun"></i>
-            <span>32°C</span>
-            <small>Cerah</small>
-        </div>
-        <div class="notification-bell">
-            <i class="fas fa-bell"></i>
-            <span class="badge">3</span>
-        </div>
-        <div class="user-avatar-small">AD</div>
-    </div>
-</header>
+            <!-- TOPBAR -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h1 id="pageTitle">Dashboard Monitoring</h1>
+                    <p id="pageSubtitle">Pantau progress setiap berkas notaris secara real-time</p>
+                </div>
+                <div class="topbar-right">
+                    <button class="theme-toggle-topbar" id="themeToggle" onclick="toggleTheme()" title="Ganti Tema">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </button>
+                    
+                    <div class="search-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="globalSearch" placeholder="Cari berkas...">
+                    </div>
+                    <div class="weather-widget">
+                        <i class="fas fa-sun"></i>
+                        <span>32°C</span>
+                        <small>Cerah</small>
+                    </div>
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                    <div class="user-avatar-small">AD</div>
+                </div>
+            </header>
 
             <!-- CONTENT AREA -->
             <section class="content-area">
@@ -232,13 +215,12 @@
                         </div>
                     </div>
 
-                    <!-- STATISTICS CARDS -->
                     <div class="stats-grid">
                         <div class="stat-card purple">
                             <div class="stat-icon"><i class="fas fa-folder"></i></div>
                             <div class="stat-content">
                                 <span class="stat-number" id="totalBerkas">0</span>
-                                <span class="stat-label">Total Berkas</span>
+                                <span class="stat-label">Total Berkas Aktif</span>
                                 <span class="stat-sub">Semua data</span>
                             </div>
                             <div class="stat-trend"><i class="fas fa-arrow-up"></i> 12%</div>
@@ -275,7 +257,6 @@
                         </div>
                     </div>
 
-                    <!-- CHARTS -->
                     <div class="charts-grid">
                         <div class="chart-panel">
                             <div class="panel-header">
@@ -299,7 +280,6 @@
                         </div>
                     </div>
 
-                    <!-- RECENT TABLE -->
                     <div class="table-panel">
                         <div class="panel-header">
                             <div class="panel-header-left">
@@ -336,7 +316,7 @@
                     <div class="page-header">
                         <div>
                             <h1><i class="fas fa-folder-open"></i> Data Berkas</h1>
-                            <p>Kelola seluruh data berkas notaris dengan mudah</p>
+                            <p>Kelola seluruh data berkas notaris yang masih aktif</p>
                         </div>
                         <button class="btn btn-primary" id="addBerkasButton">
                             <i class="fas fa-plus"></i> Tambah Berkas
@@ -367,7 +347,7 @@
                                     <option value="Sedang Dalam Proses">Sedang Dalam Proses</option>
                                     <option value="Menunggu Notaris">Menunggu Notaris</option>
                                     <option value="Menunggu TTD">Menunggu TTD</option>
-                                    <option value="Selesai">Selesai</option>
+                                    <option value="Menunggu SK">Menunggu SK</option>
                                     <option value="Terkendala">Terkendala</option>
                                     <option value="Seleksi">Seleksi</option>
                                 </select>
@@ -402,7 +382,7 @@
                     <div class="page-header">
                         <div>
                             <h1><i class="fas fa-chart-simple"></i> Monitoring Semua Berkas</h1>
-                            <p>Lihat progress seluruh berkas dari awal hingga selesai</p>
+                            <p>Lihat progress seluruh berkas aktif dari awal hingga selesai</p>
                         </div>
                         <div class="header-actions">
                             <button class="btn btn-outline" onclick="refreshData()">
@@ -414,7 +394,6 @@
                         </div>
                     </div>
 
-                    <!-- Filter Monitoring -->
                     <div class="filter-bar monitoring-filter">
                         <div class="filter-item">
                             <i class="fas fa-search"></i>
@@ -438,7 +417,7 @@
                                 <option value="Sedang Dalam Proses">Sedang Dalam Proses</option>
                                 <option value="Menunggu Notaris">Menunggu Notaris</option>
                                 <option value="Menunggu TTD">Menunggu TTD</option>
-                                <option value="Selesai">Selesai</option>
+                                <option value="Menunggu SK">Menunggu SK</option>
                                 <option value="Terkendala">Terkendala</option>
                                 <option value="Seleksi">Seleksi</option>
                             </select>
@@ -453,7 +432,6 @@
                         </div>
                     </div>
 
-                    <!-- Monitoring Table -->
                     <div class="table-panel">
                         <div class="panel-header">
                             <div class="panel-header-left">
@@ -494,69 +472,154 @@
                     </div>
                 </div>
 
-              <!-- =============================================
-     LEGALITAS SELESAI PAGE - DENGAN OSS & KENDALA
-============================================= -->
-<div id="legalitasPage" class="page hidden">
-    <div class="page-header">
-        <div>
-            <h1><i class="fas fa-check-circle"></i> Legalitas Sudah Selesai</h1>
-            <p>Daftar berkas yang legalitasnya sudah selesai (SK sudah keluar)</p>
-        </div>
-        <div class="header-actions">
-            <button class="btn btn-outline" onclick="refreshData()">
-                <i class="fas fa-sync"></i> Refresh
-            </button>
-        </div>
-    </div>
+                <!-- =============================================
+                     SIAP TANDA TANGAN PAGE
+                ============================================= -->
+                <div id="siapttdPage" class="page hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1><i class="fas fa-signature"></i> SIAP Tanda Tangan</h1>
+                            <p>Berkas yang sudah siap untuk tanda tangan (Terima Minuta sudah ada)</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-outline" onclick="refreshData()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
 
-    <div class="table-panel">
-        <div class="filter-bar">
-            <div class="filter-item">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchLegalitas" placeholder="Cari nama...">
-            </div>
-            <div class="filter-item">
-                <i class="fas fa-tag"></i>
-                <select id="filterLegalitasKategori">
-                    <option value="">Semua Kategori</option>
-                    <option value="Pendirian Baru">Pendirian Baru</option>
-                    <option value="Perubahan">Perubahan</option>
-                    <option value="Pembubaran">Pembubaran</option>
-                    <option value="RUPS">RUPS</option>
-                </select>
-            </div>
-            <div class="filter-item">
-                <i class="fas fa-check-circle"></i>
-                <select id="filterLegalitasOSS">
-                    <option value="">Semua OSS</option>
-                    <option value="Sudah Selesai">Sudah Selesai</option>
-                    <option value="Belum Selesai">Belum Selesai</option>
-                </select>
-            </div>
-        </div>
+                    <div class="table-panel">
+                        <div class="panel-header">
+                            <div class="panel-header-left">
+                                <h3><i class="fas fa-list"></i> Daftar Berkas SIAP Tanda Tangan</h3>
+                                <span class="panel-badge" id="siapTTDTableCount">0 berkas</span>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table full">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nama Badan Hukum</th>
+                                        <th>Kategori</th>
+                                        <th>Bentuk</th>
+                                        <th>Kirim Notaris</th>
+                                        <th>Terima Minuta</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="siapTTDTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="table-wrapper">
-            <table class="data-table full">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nama Badan Hukum</th>
-                        <th>Kategori</th>
-                        <th>Bentuk</th>
-                        <th>Status</th>
-                        <th>SK Setuju</th>
-                        <th>Stempel</th>
-                        <th>OSS</th>
-                        <th>Keterangan OSS</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="legalitasTable"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
+                <!-- =============================================
+                     PT/CV TERKENDALA SK PAGE
+                ============================================= -->
+                <div id="terkendalaPage" class="page hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1><i class="fas fa-exclamation-triangle"></i> PT/CV Terkendala SK</h1>
+                            <p>Berkas PT/CV yang sedang terkendala dalam proses SK</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-outline" onclick="refreshData()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-panel">
+                        <div class="panel-header">
+                            <div class="panel-header-left">
+                                <h3><i class="fas fa-list"></i> Daftar Berkas Terkendala</h3>
+                                <span class="panel-badge" id="terkendalaTableCount">0 berkas</span>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table full">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nama Badan Hukum</th>
+                                        <th>Kategori</th>
+                                        <th>Bentuk</th>
+                                        <th>Status</th>
+                                        <th>Kendala</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="terkendalaTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =============================================
+                     LEGALITAS SELESAI PAGE
+                ============================================= -->
+                <div id="legalitasPage" class="page hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1><i class="fas fa-check-circle"></i> Legalitas Sudah Selesai</h1>
+                            <p>Daftar berkas yang legalitasnya sudah selesai (SK sudah keluar)</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-outline" onclick="refreshData()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-panel">
+                        <div class="filter-bar">
+                            <div class="filter-item">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchLegalitas" placeholder="Cari nama...">
+                            </div>
+                            <div class="filter-item">
+                                <i class="fas fa-tag"></i>
+                                <select id="filterLegalitasKategori">
+                                    <option value="">Semua Kategori</option>
+                                    <option value="Pendirian Baru">Pendirian Baru</option>
+                                    <option value="Perubahan">Perubahan</option>
+                                    <option value="Pembubaran">Pembubaran</option>
+                                    <option value="RUPS">RUPS</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <i class="fas fa-check-circle"></i>
+                                <select id="filterLegalitasOSS">
+                                    <option value="">Semua OSS</option>
+                                    <option value="Sudah Selesai">Sudah Selesai</option>
+                                    <option value="Belum Selesai">Belum Selesai</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table class="data-table full">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nama Badan Hukum</th>
+                                        <th>Kategori</th>
+                                        <th>Bentuk</th>
+                                        <th>Status</th>
+                                        <th>SK Setuju</th>
+                                        <th>Stempel</th>
+                                        <th>OSS</th>
+                                        <th>Keterangan OSS</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="legalitasTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- =============================================
                      STEMPEL PAGE
@@ -579,6 +642,7 @@
                                 <i class="fas fa-stamp"></i>
                                 <select id="filterStempel">
                                     <option value="">Semua</option>
+                                    <option value="Belum Pesan Stempel">Belum Pesan Stempel</option>
                                     <option value="Dari Simpelbiz Stempel">Dari Simpelbiz Stempel</option>
                                     <option value="Dari Client Stempel">Dari Client Stempel</option>
                                     <option value="Tidak Perlu Stempel">Tidak Perlu Stempel</option>
@@ -655,7 +719,6 @@
                                 <tbody id="pengirimanTable"></tbody>
                             </table>
                         </div>
-                        <!-- Pagination Pengiriman -->
                         <div id="pengirimanPaginationContainer" class="pagination-container"></div>
                     </div>
                 </div>
@@ -779,7 +842,6 @@
                 </div>
 
                 <div class="form-grid">
-                    <!-- Nama Badan Hukum -->
                     <div class="form-field full-width">
                         <label><i class="fas fa-building"></i> Nama PT / CV / Yayasan / Perkumpulan *</label>
                         <div class="input-with-icon">
@@ -789,7 +851,6 @@
                         <small><i class="fas fa-info-circle"></i> Masukkan nama lengkap badan hukum sesuai akta pendirian.</small>
                     </div>
 
-                    <!-- Kategori Layanan -->
                     <div class="form-field">
                         <label><i class="fas fa-tag"></i> Kategori Layanan *</label>
                         <div class="input-with-icon">
@@ -805,7 +866,6 @@
                         </div>
                     </div>
 
-                    <!-- Bentuk Entitas -->
                     <div class="form-field">
                         <label><i class="fas fa-layer-group"></i> Bentuk Entitas *</label>
                         <div class="input-with-icon">
@@ -821,22 +881,20 @@
                         </div>
                     </div>
 
-                   <!-- Pesan Stempel -->
-<div class="form-field" id="stempelField">
-    <label><i class="fas fa-stamp"></i> Pesan Stempel Perusahaan</label>
-    <div class="input-with-icon">
-        <select id="pesanStempel">
-            <option value="Belum Pesan Stempel">⏳ Belum Pesan Stempel</option>
-            <option value="Dari Simpelbiz Stempel">✅ Dari Simpelbiz Stempel</option>
-            <option value="Dari Client Stempel">👤 Dari Client Stempel</option>
-            <option value="Tidak Perlu Stempel">🚫 Tidak Perlu Stempel</option>
-        </select>
-        <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
-    </div>
-    <small><i class="fas fa-info-circle"></i> Pilih status pemesanan stempel perusahaan.</small>
-</div>
+                    <div class="form-field" id="stempelField">
+                        <label><i class="fas fa-stamp"></i> Pesan Stempel Perusahaan</label>
+                        <div class="input-with-icon">
+                            <select id="pesanStempel">
+                                <option value="Belum Pesan Stempel">⏳ Belum Pesan Stempel</option>
+                                <option value="Dari Simpelbiz Stempel">✅ Dari Simpelbiz Stempel</option>
+                                <option value="Dari Client Stempel">👤 Dari Client Stempel</option>
+                                <option value="Tidak Perlu Stempel">🚫 Tidak Perlu Stempel</option>
+                            </select>
+                            <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                        <small><i class="fas fa-info-circle"></i> Pilih status pemesanan stempel perusahaan.</small>
+                    </div>
 
-                    <!-- Status Pengerjaan -->
                     <div class="form-field">
                         <label><i class="fas fa-flag"></i> Status Pengerjaan SK *</label>
                         <div class="input-with-icon">
@@ -853,7 +911,6 @@
                         </div>
                     </div>
 
-                    <!-- Tgl Dikirim ke Notaris -->
                     <div class="form-field">
                         <label><i class="fas fa-paper-plane"></i> Tgl Dikirim ke Notaris</label>
                         <div class="input-with-icon">
@@ -862,7 +919,6 @@
                         </div>
                     </div>
 
-                    <!-- Jadwal Tanda Tangan -->
                     <div class="form-field">
                         <label><i class="fas fa-pen-fancy"></i> Jadwal Tanda Tangan (TTD)</label>
                         <div class="input-with-icon">
@@ -871,7 +927,6 @@
                         </div>
                     </div>
 
-                    <!-- Terima Minuta -->
                     <div class="form-field">
                         <label><i class="fas fa-file-alt"></i> Terima Minuta (Notaris)</label>
                         <div class="input-with-icon">
@@ -880,7 +935,6 @@
                         </div>
                     </div>
 
-                    <!-- Salinan Diberikan -->
                     <div class="form-field">
                         <label><i class="fas fa-copy"></i> Salinan Diberikan Hari/Tgl</label>
                         <div class="input-with-icon">
@@ -889,7 +943,6 @@
                         </div>
                     </div>
 
-                    <!-- Tgl SK -->
                     <div class="form-field">
                         <label><i class="fas fa-certificate"></i> Jawab Setuju / Tgl SK Kementerian</label>
                         <div class="input-with-icon">
@@ -898,7 +951,6 @@
                         </div>
                     </div>
 
-                    <!-- Metode Pengiriman -->
                     <div class="form-field">
                         <label><i class="fas fa-truck"></i> Metode Pengiriman Berkas</label>
                         <div class="input-with-icon">
@@ -913,7 +965,6 @@
                         </div>
                     </div>
 
-                    <!-- No Resi -->
                     <div class="form-field">
                         <label><i class="fas fa-barcode"></i> No. Resi / Nama Pengambil</label>
                         <div class="input-with-icon">
@@ -922,7 +973,6 @@
                         </div>
                     </div>
 
-                    <!-- Tgl Kirim Ambil -->
                     <div class="form-field">
                         <label><i class="fas fa-calendar-check"></i> Tanggal Kirim / Ambil</label>
                         <div class="input-with-icon">
@@ -931,7 +981,6 @@
                         </div>
                     </div>
 
-                    <!-- Catatan Kendala -->
                     <div class="form-field full-width">
                         <label><i class="fas fa-exclamation-triangle"></i> Catatan Kendala PT / CV / Organisasi</label>
                         <div class="input-with-icon">
@@ -977,7 +1026,6 @@
 
             <form id="pengirimanForm" class="modal-form">
                 <div class="form-grid">
-                    <!-- Nama Badan Hukum -->
                     <div class="form-field full-width">
                         <label><i class="fas fa-building"></i> Nama Badan Hukum *</label>
                         <div class="input-with-icon">
@@ -986,7 +1034,6 @@
                         </div>
                     </div>
 
-                    <!-- Kategori -->
                     <div class="form-field">
                         <label><i class="fas fa-tag"></i> Kategori *</label>
                         <div class="input-with-icon">
@@ -995,14 +1042,13 @@
                                 <option value="Pendirian Baru">🚀 Pendirian Baru</option>
                                 <option value="Perubahan">🔄 Perubahan</option>
                                 <option value="Pembubaran">📉 Pembubaran</option>
-                                <option value="RUPS">📋 RUPS (Rapat Umum Pemegang Saham)</option>
+                                <option value="RUPS">📋 RUPS</option>
                                 <option value="Lainnya">📌 Lainnya</option>
                             </select>
                             <span class="input-icon"><i class="fas fa-chevron-down"></i></span>
                         </div>
                     </div>
 
-                    <!-- Metode Pengiriman -->
                     <div class="form-field">
                         <label><i class="fas fa-truck"></i> Metode Pengiriman *</label>
                         <div class="input-with-icon">
@@ -1017,7 +1063,6 @@
                         </div>
                     </div>
 
-                    <!-- No Resi -->
                     <div class="form-field">
                         <label><i class="fas fa-barcode"></i> No. Resi / Nama Pengambil</label>
                         <div class="input-with-icon">
@@ -1026,7 +1071,6 @@
                         </div>
                     </div>
 
-                    <!-- Tanggal Kirim -->
                     <div class="form-field">
                         <label><i class="fas fa-calendar-check"></i> Tanggal Kirim *</label>
                         <div class="input-with-icon">
@@ -1035,7 +1079,6 @@
                         </div>
                     </div>
 
-                    <!-- Keterangan -->
                     <div class="form-field full-width">
                         <label><i class="fas fa-info-circle"></i> Keterangan Berkas</label>
                         <div class="input-with-icon">
