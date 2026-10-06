@@ -50,12 +50,18 @@ function getDataAktif() {
     return allData.filter(item => !item.tgl_sk_setuju && !item.tgl_sk);
 }
 
-// Data SIAP Tanda Tangan (HANYA status "Menunggu TTD")
+// Data SIAP Tanda Tangan (HANYA status "Menunggu TTD", diurutkan tgl Kirim Notaris terbaru)
 function getDataSiapTTD() {
-    return getDataAktif().filter(item => {
-        const status = (item.status || "").toLowerCase().trim();
-        return status === "menunggu ttd";
-    });
+    return getDataAktif()
+        .filter(item => {
+            const status = (item.status || "").toLowerCase().trim();
+            return status === "menunggu ttd";
+        })
+        .sort((a, b) => {
+            const dateA = new Date(a.kirim_notaris || a.tgl_dikirim_notaris || 0);
+            const dateB = new Date(b.kirim_notaris || b.tgl_dikirim_notaris || 0);
+            return dateB - dateA; // descending: terbaru di atas
+        });
 }
 
 // Data PT/CV Terkendala SK
