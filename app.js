@@ -63,9 +63,15 @@ function getDataTerkendala() {
     return getDataAktif().filter(item => isDataTerkendala(item));
 }
 
-// Data Legalitas Selesai
+// Data Legalitas Selesai (diurutkan berdasarkan tgl SK terbaru)
 function getDataLegalitas() {
-    return allData.filter(item => item.tgl_sk_setuju || item.tgl_sk);
+    return allData
+        .filter(item => item.tgl_sk_setuju || item.tgl_sk)
+        .sort((a, b) => {
+            const dateA = new Date(a.tgl_sk_setuju || a.tgl_sk);
+            const dateB = new Date(b.tgl_sk_setuju || b.tgl_sk);
+            return dateB - dateA; // descending: terbaru di atas
+        });
 }
 
 // ============================================================
